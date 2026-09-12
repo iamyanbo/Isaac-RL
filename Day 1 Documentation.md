@@ -66,6 +66,22 @@ Note: Agent did not propose this on its own. Human-directed.
 
 **002 — Manual goal overwrite** (~85k steps)
 
+New Goal: 
+```
+Build a RL agent that learns to play The Binding of Isaac from
+scratch. Bridge game state to Python and actions back. Design the RL
+architecture: environment, observation space, action space, reward
+function, algorithm, training loop. Add a live terminal for episode count,
+reward, and loss.
+Training runs detached and must never be stopped by you. I pause and resume
+this goal manually; you cannot pause yourself.
+Workflow: set up, launch training detached, then output PAUSE on its own
+line and stop. I'll pause the goal. When I resume — typically 12–24 hours
+later — review progress, report status and any decisions, then either
+continue or set up the next run and signal PAUSE again. Repeat.
+The goal is complete when the agent can consistently clear the first floor,
+including the boss.```
+
 Trigger: Agent's self-written goal produced constant monitoring with no
 handoff point. No signal for "I'm done, pause me," so the workflow had no
 way to stop token burn while training ran.
