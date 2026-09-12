@@ -80,7 +80,8 @@ line and stop. I'll pause the goal. When I resume — typically 12–24 hours
 later — review progress, report status and any decisions, then either
 continue or set up the next run and signal PAUSE again. Repeat.
 The goal is complete when the agent can consistently clear the first floor,
-including the boss.```
+including the boss.
+```
 
 Trigger: Agent's self-written goal produced constant monitoring with no
 handoff point. No signal for "I'm done, pause me," so the workflow had no
