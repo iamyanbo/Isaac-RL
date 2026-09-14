@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
+import torch
 
 from isaac_rl.bridge import Bridge
 from isaac_rl.runtime import RunLease
@@ -28,7 +29,8 @@ def test_close_does_not_wait_gameplay_timeout_for_unresponsive_game():
 
 
 @pytest.mark.parametrize("fail",[False,True])
-def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path,monkeypatch,fail):
+@pytest.mark.parametrize("entropy_coef",[None,0.002])
+def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path,monkeypatch,fail,entropy_coef):
     class FakeGames:
         closed = False
         def __init__(self,ports,*args):
@@ -47,7 +49,10 @@ def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path
         def close(self):
             FakeGames.closed = True
     monkeypatch.setattr(train_vector,"ParallelIsaac",FakeGames)
-    monkeypatch.setattr(sys,"argv",["train_vector","--run",str(tmp_path),"--ports","18000","18001","--steps","4","--rollout","2"])
+    arguments = ["train_vector","--run",str(tmp_path),"--ports","18000","18001","--steps","4","--rollout","2"]
+    if entropy_coef is not None:
+        arguments += ["--entropy-coef",str(entropy_coef)]
+    monkeypatch.setattr(sys,"argv",arguments)
     if fail:
         with pytest.raises(ConnectionResetError):
             train_vector.main()
@@ -58,11 +63,23 @@ def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path
         assert update["rollout_sps"] > 0
         assert {"collection_s","inference_s","update_s","save_s","wall_s"} <= update["timing"].keys()
         assert all(v >= 0 for v in update["timing"].values())
+        expected_entropy = .02 if entropy_coef is None else entropy_coef
+        assert update["entropy_coef"] == expected_entropy
+        saved = torch.load(tmp_path/"latest.pt",weights_only=False)
+        assert saved["entropy_coef"] == expected_entropy
+        assert json.loads((tmp_path/"config.json").read_text())["entropy_coef"] == expected_entropy
+        # Omitted CLI value must inherit the checkpoint on resume, not reset to .02.
+        monkeypatch.setattr(sys,"argv",["train_vector","--run",str(tmp_path),"--ports","18000","18001",
+            "--steps","8","--rollout","2","--resume",str(tmp_path/"latest.pt")])
+        train_vector.main()
+        resumed = torch.load(tmp_path/"latest.pt",weights_only=False)
+        assert resumed["steps"] == 8 and resumed["entropy_coef"] == expected_entropy
     state = json.loads((tmp_path/"status.json").read_text())
     assert state["cleanup_complete"] and FakeGames.closed
     assert state["exit_code"] == (1 if fail else 0)
     assert state["status"] == ("error" if fail else "stopped")
     assert state["exit_reason"] == ("exception" if fail else "step_budget")
     assert state["session_id"] and state["ended_at"]
+    assert state["entropy_coef"] == (.02 if entropy_coef is None else entropy_coef)
     with RunLease(tmp_path):
         pass

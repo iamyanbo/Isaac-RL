@@ -6,6 +6,14 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
+### Next training adaptation — September 14
+
+Selected and implemented one change: **PPO entropy coefficient0.02 →0.002**. All six-worker training settings, rewards, observations, architecture, optimizer, and eight-update actions stay unchanged. The baseline at2,417,208 steps is preserved in `runs/entropy-intervention-20260914/baseline.pt`. See [the training experiment](EXPERIMENT-20260914.md).
+
+The next run, `runs/ppo-entropy-v5`, is **prepared, not launched**: reusing the current six workers requires a one-time checkpointed handover, which needs an exception to the user's standing never-stop-live-training instruction. No new diagnostic result is required. The learner is not being replaced with a one-worker experiment or duplicated under95.7% Windows commit pressure.
+
+The trainers and launchers now accept `--entropy-coef` / `-EntropyCoef`. Omission inherits the checkpoint value (legacy checkpoints default0.02); saved checkpoints and update/status/config telemetry record the coefficient. Changing it requires a new run directory.
+
 ### Frozen behavior comparison
 
 `isaac_rl.behavior_eval` evaluates one immutable checkpoint on20 unseen normal seeds in three conditions: deterministic, stochastic, and the same stochastic policy with movement disabled only during combat. It records full native states plus actions, per-head entropy/probabilities, displacement, event deltas and reward components. Paired comparison requires matching observation prefixes through the first combat state. Unmatched prefixes and seeds that never reach combat are excluded from causal movement comparisons. This is a diagnostic, not the100-seed success gate.

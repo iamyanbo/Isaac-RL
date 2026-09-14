@@ -13,7 +13,7 @@ import psutil
 
 from .bridge import Bridge
 from .env import IsaacEnv
-from .ppo import ActorCritic, as_tensor, optimize
+from .ppo import ActorCritic, as_tensor, optimize, resolve_entropy_coef
 from .observation import OBSERVATION_PROFILES, resolve_observation_profile
 from .rewards import PROFILES, profile_manifest
 from .storage import atomic_json, checkpoint, source_fingerprint
@@ -30,6 +30,7 @@ def main():
     parser.add_argument("--idle-limit",type=int,default=450)
     parser.add_argument("--seed",type=int,default=20260912)
     parser.add_argument("--device",default="cpu")
+    parser.add_argument("--entropy-coef",type=float,help="Inherit checkpoint value; old checkpoints/new runs default to 0.02")
     parser.add_argument("--resume",type=Path)
     parser.add_argument("--trace",action="store_true")
     parser.add_argument("--observation-profile",choices=OBSERVATION_PROFILES)
@@ -84,6 +85,7 @@ def run_training(args):
     if saved is not None and args.observation_profile != saved.get("observation_profile","legacy_v1"):
         recent.clear()
         losses = {}
+    args.entropy_coef = resolve_entropy_coef(args.entropy_coef,saved,(run/"status.json").exists())
     config = {key:str(value) if isinstance(value,Path) else value for key,value in vars(args).items()}
     config.update(architecture=1,algorithm="PPO",initialization="random" if not args.resume else str(args.resume),
         observations="current room entities, spatial grid, and visit memory",reward=profile_manifest(args.reward_profile),
@@ -105,7 +107,8 @@ def run_training(args):
               "updates":updates,"message":"Waiting for the private game bridge on localhost:9999"}
     status.update(losses)
     status.update(session_id=session_name,num_envs=1,ports=[9999],device=args.device,
-        step_target=args.steps,initial_steps=initial_steps,checkpoint_steps=steps,exit_code=None)
+        step_target=args.steps,initial_steps=initial_steps,checkpoint_steps=steps,exit_code=None,
+        entropy_coef=args.entropy_coef)
     atomic_json(run/"status.json",status)
     def update_status(info=None, **extra):
         status.update(time=time.time(),steps=steps,episodes=episodes,updates=updates,
@@ -119,7 +122,7 @@ def run_training(args):
     def save():
         checkpoint(run/"latest.pt",model,optimizer,dict(steps=steps,episodes=episodes,updates=updates,
             recent=list(recent),training_seeds=sorted(training_seeds),numpy_rng=np.random.get_state(),
-            frames=args.frames,architecture=1,source_hashes=config["source_hashes"],losses=losses,
+            frames=args.frames,entropy_coef=args.entropy_coef,architecture=1,source_hashes=config["source_hashes"],losses=losses,
             observation_profile=args.observation_profile,reward_profile=args.reward_profile,
             reward=profile_manifest(args.reward_profile),created=time.time()))
         atomic_json(run/"training_seeds.json",sorted(training_seeds))
@@ -167,14 +170,14 @@ def run_training(args):
                         break
                 update_status(status="optimizing")
                 with measure(timing,"update_s",args.device):
-                    losses = optimize(model,optimizer,rollout,device=args.device)
+                    losses = optimize(model,optimizer,rollout,device=args.device,entropy_coef=args.entropy_coef)
                 updates += 1
                 with measure(timing,"save_s"):
                     save()
                 timing["wall_s"] = time.perf_counter()-rollout_started
                 rollout_sps = len(rollout["obs"])/timing["wall_s"]
                 update_file.write(json.dumps(dict(time=time.time(),session_id=session_name,steps=steps,updates=updates,
-                    timing=timing,rollout_sps=rollout_sps,device=args.device,**losses))+"\n")
+                    timing=timing,rollout_sps=rollout_sps,device=args.device,entropy_coef=args.entropy_coef,**losses))+"\n")
                 update_status(info,status="training",timing=timing,rollout_sps=rollout_sps,**losses)
                 print(f"update={updates} steps={steps} loss={losses['loss']:.5f} entropy={losses['entropy']:.3f} sps={status['sps']:.2f}",flush=True)
             save()

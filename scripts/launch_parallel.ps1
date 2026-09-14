@@ -4,6 +4,7 @@ param(
     [int[]]$Instances = @(),
     [ValidateRange(0,2147483647)][int]$Steps = 0,
     [ValidateSet('cpu','cuda')][string]$Device = 'cpu',
+    [ValidateRange(0,1)][double]$EntropyCoef = 0.02,
     [switch]$Resume,
     [string]$Initialize = '',
     [ValidateSet('', 'legacy_v1', 'balanced_v2', 'confirmed_v3')][string]$RewardProfile = '',
@@ -43,6 +44,9 @@ New-Item -ItemType Directory -Path $runPath -Force | Out-Null
 $trainArgs = @('-u','-m','isaac_rl.train_vector','--run',('"' + $runPath + '"'),'--ports') + @($ports | ForEach-Object { [string]$_ })
 $trainArgs += @('--steps',[string]$Steps)
 $trainArgs += @('--device',$Device)
+if ($PSBoundParameters.ContainsKey('EntropyCoef')) {
+    $trainArgs += @('--entropy-coef',$EntropyCoef.ToString([System.Globalization.CultureInfo]::InvariantCulture))
+}
 if ($Resume) { $trainArgs += @('--resume',('"' + (Join-Path $runPath 'latest.pt') + '"')) }
 if ($RewardProfile) { $trainArgs += @('--reward-profile',$RewardProfile) }
 if ($ObservationProfile) { $trainArgs += @('--observation-profile',$ObservationProfile) }

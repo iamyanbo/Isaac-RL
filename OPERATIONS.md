@@ -1,5 +1,19 @@
 # Current handoff — 2026-09-14
 
+## CURRENT: user-directed adaptation implemented; six-worker handover needs authority
+
+Latest user instruction supersedes waiting for diagnostic completion: **stop diagnosis-only work, choose one high-value adaptation, keep everything else constant, preserve the current checkpoint, launch next training**. Chosen sole training change: PPO entropy coefficient **0.02→0.002**. See `EXPERIMENT-20260914.md`. Do not continue the earlier pattern of waiting for120 diagnostic episodes before this intervention.
+
+Implemented explicit coefficient configuration in both trainers/launchers, legacy-safe default0.02, checkpoint inheritance/persistence, per-update/status/config reporting, finite/nonnegative validation, and rejection of changes within an existing run. No reward, observation, architecture, action-duration, PPO clipping/epochs/lr, or worker-count changes. Source edits do not hot-change the already-running learner, which retains its imported0.02 code.
+
+Frozen baseline **`runs/entropy-intervention-20260914/baseline.pt`**, steps **2,417,208**, episodes7895, updates3429, SHA256 **eeffc748b50552e5947e3575585d92e1294f60dadc6b0f8e94996ac026a294ae**. Exact model/Adam/RNG/seeds retained and model tensors finite. Original config/status copied alongside; experiment manifest records the single factor and constants. New target **`runs/ppo-entropy-v5`** has NOT launched yet.
+
+Standing user instruction still forbids stopping live training. Learner51580 creation1789334361.456794 remains alive on its six ports; no signal or stop.request was issued. Ask for **one checkpointed handover** to reuse those six workers. Do not infer it from the automatic goal continuation alone. Windows capacity check95.69% committed/4.11GiB headroom, CPU60.5%; six additional native games/another learner risk allocation failure. Do not substitute fewer workers, duplicate existing ports, or change unrelated apps/memory settings. This is a new authority question, not the old verified-wait state.
+
+After explicit approval: checkpointed exit of exact old learner, preserve final old checkpoint/status, verify process exit/port release, then launch the command in the experiment document. Initialize from the preserved2,417,208 baseline, not a silently newer parent. Keep all six instances0/1/2/4/5/6, CPU, original hyperparameters, new coefficient0.002, uncapped. New dashboard8766; existing baseline dashboard8765 remains read-only. Verify first real update and metadata before handoff. The original full-floor goal remains unmet.
+
+Verification before asking for handover authority: **84 tests passed**, both PowerShell launchers parsed, and `git diff --check` passed. Preserved checkpoint digest and held-constant configuration matched the experiment manifest. Live learner identity reverified at2,422,872 steps/six workers. Active stop.request absent; new treatment status absent. Implementation is complete; native launch is the remaining action requiring the one-time exception.
+
 ## CURRENT: completed behavior audit; repeated random-control comparison live
 
 Previous goal turn classified **VERIFIED WAIT**: exact learner/evaluator process identities were confirmed live and counters advanced. This turn is **PROGRESS**: analyzed the naturally completed 60-episode diagnostic, reproduced every episode behavior summary from transitions, recorded exact evidence hashes/training-log byte prefixes, added repeatable offline analysis and uniform-random controls, and launched the next diagnostic without touching live training.

@@ -12,7 +12,7 @@ import numpy as np
 import psutil
 import torch
 
-from .ppo import ActorCritic, optimize
+from .ppo import ActorCritic, optimize, resolve_entropy_coef
 from .observation import OBSERVATION_PROFILES, resolve_observation_profile
 from .storage import atomic_json, checkpoint, load_snapshot, source_fingerprint
 from .rewards import PROFILES, profile_manifest
@@ -42,6 +42,7 @@ def main():
     parser.add_argument("--idle-limit",type=int,default=450)
     parser.add_argument("--seed",type=int,default=20260912)
     parser.add_argument("--device",default="cpu")
+    parser.add_argument("--entropy-coef",type=float,help="Inherit checkpoint value; old checkpoints/new runs default to 0.02")
     parser.add_argument("--reward-profile",choices=list(PROFILES),help="Defaults to checkpoint profile on resume; balanced_v2 for new runs")
     parser.add_argument("--observation-profile",choices=OBSERVATION_PROFILES)
     args = parser.parse_args()
@@ -97,6 +98,7 @@ def run_training(args):
         recent.clear()
         losses = {}
     args.reward_profile = args.reward_profile or "balanced_v2"
+    args.entropy_coef = resolve_entropy_coef(args.entropy_coef,saved,(run/"status.json").exists())
     config = {key:str(value) if isinstance(value,Path) else value for key,value in vars(args).items()}
     config.update(architecture=1,algorithm="PPO",mode="full_floor",origin=origin,
         reward=profile_manifest(args.reward_profile),source_hashes=source_fingerprint(root))
@@ -117,6 +119,7 @@ def run_training(args):
         session_id=session_name,initial_steps=initial_steps,step_target=args.steps,device=args.device,
         checkpoint_steps=steps,exit_code=None,
         time=time.time(),message=f"Waiting for {count} independently saved normal game instances",**losses)
+    status["entropy_coef"] = args.entropy_coef
     atomic_json(run/"status.json",status)
     def report(infos=None, **fields):
         status.update(time=time.time(),steps=steps,episodes=episodes,updates=updates,
@@ -134,7 +137,7 @@ def run_training(args):
         checkpoint(path or run/"latest.pt",model,optimizer,dict(steps=steps,episodes=episodes,updates=updates,
             recent=list(recent),training_seeds=sorted(seeds),numpy_rng=np.random.get_state(),
             cuda_rng=torch.cuda.get_rng_state_all() if args.device.startswith("cuda") else None,
-            frames=args.frames,architecture=1,source_hashes=config["source_hashes"],origin=origin,
+            frames=args.frames,entropy_coef=args.entropy_coef,architecture=1,source_hashes=config["source_hashes"],origin=origin,
             ports=args.ports,losses=losses,reward_profile=args.reward_profile,
             reward=profile_manifest(args.reward_profile),observation_profile=args.observation_profile,created=time.time()))
         atomic_json(run/"training_seeds.json",sorted(seeds))
@@ -203,7 +206,8 @@ def run_training(args):
                         break
                 report(status="optimizing")
                 with measure(timing,"update_s",args.device):
-                    losses = optimize(model,optimizer,rollout,device=args.device,batch_size=args.batch_size)
+                    losses = optimize(model,optimizer,rollout,device=args.device,batch_size=args.batch_size,
+                                      entropy_coef=args.entropy_coef)
                 updates += 1
                 with measure(timing,"save_s"):
                     save()
@@ -212,7 +216,7 @@ def run_training(args):
                 rollout_sps = len(rollout["obs"])*count/timing["wall_s"]
                 memory = commit_memory()
                 update_file.write(json.dumps(dict(time=time.time(),session_id=session_name,steps=steps,updates=updates,num_envs=count,
-                    device=args.device,timing=timing,rollout_sps=rollout_sps,commit_memory=memory,**losses))+"\n")
+                    device=args.device,entropy_coef=args.entropy_coef,timing=timing,rollout_sps=rollout_sps,commit_memory=memory,**losses))+"\n")
                 report(infos,status="training",timing=timing,rollout_sps=rollout_sps,commit_memory=memory,**losses)
                 print(f"update={updates} steps={steps} loss={losses['loss']:.5f} entropy={losses['entropy']:.3f} sps={status['sps']:.2f}",flush=True)
             save()

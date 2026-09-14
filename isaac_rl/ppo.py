@@ -10,6 +10,22 @@ from .observation import CHANNELS, VECTOR_SIZE
 from .rewards import GAMMA
 
 
+DEFAULT_ENTROPY_COEF = 0.02
+
+
+def resolve_entropy_coef(requested=None, checkpoint=None, existing_run=False):
+    """Old checkpoints retain their original coefficient; forks opt in explicitly."""
+    parent = checkpoint.get("entropy_coef", DEFAULT_ENTROPY_COEF) if checkpoint is not None else DEFAULT_ENTROPY_COEF
+    if not math.isfinite(parent) or parent < 0:
+        raise ValueError("Checkpoint entropy coefficient must be finite and nonnegative")
+    value = parent if requested is None else float(requested)
+    if not math.isfinite(value) or value < 0:
+        raise ValueError("Entropy coefficient must be finite and nonnegative")
+    if existing_run and checkpoint is not None and value != parent:
+        raise ValueError("Changing entropy coefficient requires a new run directory")
+    return value
+
+
 class ActorCritic(nn.Module):
     def __init__(self):
         super().__init__()
@@ -61,7 +77,8 @@ def compute_gae(rewards, values, next_values, terminated, ended, gamma=GAMMA, la
 
 
 def optimize(model, optimizer, rollout, device="cpu", epochs=4, batch_size=64,
-             clip=0.2, entropy_coef=0.02, target_kl=0.025):
+             clip=0.2, entropy_coef=DEFAULT_ENTROPY_COEF, target_kl=0.025):
+    entropy_coef = resolve_entropy_coef(entropy_coef)
     advantages,returns = compute_gae(rollout["rewards"],rollout["values"],rollout["next_values"],
                                     rollout["terminated"],rollout["ended"])
     # Rollouts may be [time] or [time, independent environments]. Compute GAE
