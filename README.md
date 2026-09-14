@@ -6,6 +6,17 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
+### Frozen behavior comparison
+
+`isaac_rl.behavior_eval` evaluates one immutable checkpoint on20 unseen normal seeds in three conditions: deterministic, stochastic, and the same stochastic policy with movement disabled only during combat. It records full native states plus actions, per-head entropy/probabilities, displacement, event deltas and reward components. Paired comparison requires matching observation prefixes through the first combat state. Unmatched prefixes and seeds that never reach combat are excluded from causal movement comparisons. This is a diagnostic, not the100-seed success gate.
+
+```powershell
+# Only use a free reserved evaluation port with a current bridge; never a training port.
+py -3.10 -m isaac_rl.behavior_eval runs/ppo-damage-v4/latest.pt --output runs/new-behavior-evaluation --port 10002 --seeds 20
+```
+
+Current detached diagnostic output: `runs/behavior-20260913-v2`, frozen at **1,630,008 steps**. Its `status.json` identifies the evaluation process and phase; `result.json` updates after each completed episode; `transitions.jsonl` and `trace.jsonl` preserve behavior evidence. Live training continues independently. The first attempt under `runs/behavior-20260913` failed before any scored episode because the native console requires a space in seeded reset commands; the runner now formats canonical seed IDs before reset, with a regression test. All evidence is preserved.
+
 ### Local chart dashboard — September 13
 
 Open **http://127.0.0.1:8765/** for full recorded history: total/policy/value loss, reward, entropy, KL, explained variance, gradient norm, collection throughput, separate collection/PPO timing, committed memory, episode length, combat, damage and success curves. Choose raw/10/50-record smoothing, all/100k/1M-step ranges, and step/time axes. Hover for exact values. There is no one-million-step cutoff; missing historical metrics are not fabricated. Session changes and resumed counter rollbacks break curves and reset smoothing.
