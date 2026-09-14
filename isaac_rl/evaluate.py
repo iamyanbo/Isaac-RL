@@ -14,6 +14,7 @@ from .observation import resolve_observation_profile
 from .storage import atomic_json, load_snapshot, source_fingerprint
 from .rewards import profile_manifest
 from .analyze import distribution_summary
+from .timing import configure_evaluation
 
 
 def canonical_seed(seed):
@@ -69,14 +70,15 @@ def main():
     parser.add_argument("--device",default="cpu")
     parser.add_argument("--stochastic",action="store_true")
     parser.add_argument("--port",type=int,default=9999)
-    parser.add_argument("--max-episode-steps",type=int,default=3375)
-    parser.add_argument("--idle-limit",type=int,default=900)
+    parser.add_argument("--max-episode-steps",type=int)
+    parser.add_argument("--idle-limit",type=int)
     args = parser.parse_args()
-    if args.episodes < 1 or args.max_episode_steps < 1 or args.idle_limit < 1:
+    if args.episodes < 1 or any(v is not None and v < 1 for v in (args.max_episode_steps,args.idle_limit)):
         parser.error("Episode count and limits must be positive")
     torch.set_num_threads(2)
     torch.manual_seed(946513)
     saved,digest,payload = load_snapshot(args.checkpoint,args.device)
+    control = configure_evaluation(args,saved)
     observation_profile = resolve_observation_profile(checkpoint=saved)
     if saved["architecture"] != 1:
         raise RuntimeError("Unsupported checkpoint architecture")
@@ -96,14 +98,16 @@ def main():
         "port":args.port,"max_episode_steps":args.max_episode_steps,"idle_limit":args.idle_limit,
         "purpose":"consistency_evaluation" if args.episodes >= 100 else "diagnostic_only",
         "cleanup":"unscored reset after all requested episodes; recorded separately in cleanup.json",
-        "reward":profile_manifest(saved.get("reward_profile","legacy_v1")),
+        "reward":profile_manifest(saved.get("reward_profile","legacy_v1"),control),
+        "timing_profile":control.profile,"control_timing":control.manifest(),
         "observation_profile":observation_profile}
     atomic_json(output/"manifest.json",manifest)
     forbidden = {canonical_seed(seed) for seed in saved["training_seeds"]}
     records = []
     env = IsaacEnv(Bridge(port=args.port,trace=output/"trace.jsonl"),frames=saved["frames"],
                    max_steps=args.max_episode_steps,idle_limit=args.idle_limit,
-                   reward_profile=saved.get("reward_profile","legacy_v1"),observation_profile=observation_profile)
+                   reward_profile=saved.get("reward_profile","legacy_v1"),observation_profile=observation_profile,
+                   timing_profile=control.profile)
     try:
         with (output/"episodes.jsonl").open("w",buffering=1) as log:
             while len(records) < args.episodes:

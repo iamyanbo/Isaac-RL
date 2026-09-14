@@ -24,7 +24,7 @@ def resolve_observation_profile(requested=None, checkpoint=None, existing_run=Fa
     return profile
 
 
-def encode(state, cells, profile="terrain_v2"):
+def encode(state, cells, profile="terrain_v2", visit_scale=1.0):
     if profile not in OBSERVATION_PROFILES:
         raise ValueError(f"Unsupported observation profile: {profile}")
     grid = np.zeros((CHANNELS, HEIGHT, WIDTH), np.float32)
@@ -56,7 +56,7 @@ def encode(state, cells, profile="terrain_v2"):
         stamp(7,door["x"],door["y"],1 if door["open"] else 0.25)
     for (room_id, cx, cy), count in cells.items():
         if room_id == room["id"]:
-            stamp(9,cx*40+20,cy*40+20,min(count/10,1))
+            stamp(9,cx*40+20,cy*40+20,min(count*visit_scale/10,1))
     scalars = [
         (p["x"]-left)/width, (p["y"]-top)/height, p["vx"]/15,p["vy"]/15,
         p["hearts"]/24,p["soul"]/24,p["max_hearts"]/24,

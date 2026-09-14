@@ -1,5 +1,23 @@
 # Current handoff — 2026-09-14
 
+## CURRENT: four-tick control intervention authorized; preparing handover
+
+The user said **"make the changes"** after the verified action-hold audit, authorizing
+this next checkpointed handover on the same six workers. Implementation uses
+four ticks/action with explicit physical-time conversions; see
+`EXPERIMENT-CONTROL-20260914.md`. Current entropy learner21432 remains running while
+tests finish. Target `runs/ppo-control-v6`, archive `runs/control-intervention-20260914`,
+charts8767. Do not add workers or interrupt independent evaluator6968.
+
+User clarification: **hyperparameter tuning in general is not the default first
+intervention**. Prioritize mechanism-backed control, observation, objective, data,
+and learning-structure fixes. This is also recorded in AGENTS.md.
+
+The lower-entropy trial is being superseded by explicit user direction, not declared
+successful or failed. Preserve its final checkpoint and retain entropy0.002 in the
+next run; do not combine the control change with reverting entropy. Older sections
+below are historical and do not block this specifically authorized handover.
+
 ## CURRENT: lower-entropy six-worker training LIVE; authorized handover completed
 
 The user explicitly answered **"yes"** to one checkpointed stop of the existing learner and launch on the same six workers. Handover completed. **Current learner PID21432**, process creation **1789397760.954275**, session **`session-1789397765416817800`**, run **`runs/ppo-entropy-v5`**, CPU, six workers0/1/2/4/5/6, uncapped. **Never stop this learner**; the one-time approval is consumed, not an auto-restart policy.

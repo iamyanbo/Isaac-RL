@@ -18,16 +18,19 @@ from .observation import OBSERVATION_PROFILES, resolve_observation_profile
 from .rewards import PROFILES, profile_manifest
 from .storage import atomic_json, checkpoint, source_fingerprint
 from .runtime import RunLease, measure
+from .timing import TIMING_PROFILES, configure_training
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run",type=Path,default=Path("runs/ppo-floor1"))
     parser.add_argument("--steps",type=int,default=0,help="Total step cap; zero runs indefinitely")
-    parser.add_argument("--rollout",type=int,default=256)
-    parser.add_argument("--frames",type=int,default=8)
-    parser.add_argument("--max-episode-steps",type=int,default=3375)
-    parser.add_argument("--idle-limit",type=int,default=450)
+    parser.add_argument("--rollout",type=int)
+    parser.add_argument("--batch-size",type=int)
+    parser.add_argument("--frames",type=int)
+    parser.add_argument("--timing-profile",choices=TIMING_PROFILES)
+    parser.add_argument("--max-episode-steps",type=int)
+    parser.add_argument("--idle-limit",type=int)
     parser.add_argument("--seed",type=int,default=20260912)
     parser.add_argument("--device",default="cpu")
     parser.add_argument("--entropy-coef",type=float,help="Inherit checkpoint value; old checkpoints/new runs default to 0.02")
@@ -36,7 +39,7 @@ def main():
     parser.add_argument("--observation-profile",choices=OBSERVATION_PROFILES)
     parser.add_argument("--reward-profile",choices=list(PROFILES))
     args = parser.parse_args()
-    if args.steps < 0 or args.rollout < 1:
+    if args.steps < 0 or any(v is not None and v < 1 for v in (args.rollout,args.batch_size)):
         parser.error("Nonnegative steps and positive rollout required")
     with RunLease(args.run):
         run_training(args)
@@ -60,8 +63,8 @@ def run_training(args):
     saved = None
     if args.resume:
         saved = torch.load(args.resume,map_location=args.device,weights_only=False)
-        if saved["frames"] != args.frames or saved["architecture"] != 1:
-            raise RuntimeError("Checkpoint observation/action timing differs from this run")
+        if saved["architecture"] != 1:
+            raise RuntimeError("Checkpoint architecture differs from this run")
         model.load_state_dict(saved["model"])
         optimizer.load_state_dict(saved["optimizer"])
         torch.set_rng_state(saved["torch_rng"].cpu())
@@ -86,16 +89,25 @@ def run_training(args):
         recent.clear()
         losses = {}
     args.entropy_coef = resolve_entropy_coef(args.entropy_coef,saved,(run/"status.json").exists())
+    previous_config = json.loads((run/"config.json").read_text()) if (run/"config.json").exists() else None
+    control,schedule,timing_changed = configure_training(args,saved,(run/"status.json").exists(),previous_config,
+                                                       default_rollout=256,default_batch=64)
+    if timing_changed:
+        recent.clear()
+        losses = {}
+    native_frames = (saved or {}).get("native_frames",0)
+    native_frames_origin_steps = (saved or {}).get("native_frames_origin_steps",steps)
     config = {key:str(value) if isinstance(value,Path) else value for key,value in vars(args).items()}
     config.update(architecture=1,algorithm="PPO",initialization="random" if not args.resume else str(args.resume),
-        observations="current room entities, spatial grid, and visit memory",reward=profile_manifest(args.reward_profile),
+        observations="current room entities, spatial grid, and visit memory",reward=profile_manifest(args.reward_profile,control),
+        control_timing=control.manifest(),training_schedule=schedule,
         source_hashes=source_fingerprint(root))
     session_name = f"session-{time.time_ns()}"
     atomic_json(run/f"{session_name}.json",config)
     atomic_json(run/"config.json",config)
     bridge = Bridge(trace=run/"trace.jsonl" if args.trace else None)
     env = IsaacEnv(bridge,frames=args.frames,max_steps=args.max_episode_steps,idle_limit=args.idle_limit,
-                   observation_profile=args.observation_profile,reward_profile=args.reward_profile)
+                   observation_profile=args.observation_profile,reward_profile=args.reward_profile,timing_profile=args.timing_profile)
     started,initial_steps = time.time(),steps
     stop_requested = False
     def stop(*_):
@@ -108,10 +120,11 @@ def run_training(args):
     status.update(losses)
     status.update(session_id=session_name,num_envs=1,ports=[9999],device=args.device,
         step_target=args.steps,initial_steps=initial_steps,checkpoint_steps=steps,exit_code=None,
-        entropy_coef=args.entropy_coef)
+        entropy_coef=args.entropy_coef,frames=args.frames,timing_profile=args.timing_profile,
+        control_timing=control.manifest(),native_frames_origin_steps=native_frames_origin_steps)
     atomic_json(run/"status.json",status)
     def update_status(info=None, **extra):
-        status.update(time=time.time(),steps=steps,episodes=episodes,updates=updates,
+        status.update(time=time.time(),steps=steps,episodes=episodes,updates=updates,native_frames=native_frames,
             episode_reward=getattr(env,"episode_reward",0),
             mean_reward=float(np.mean([e["r"] for e in recent])) if recent else 0,
             recent_successes=sum(e["success"] for e in recent),recent_episodes=len(recent),
@@ -123,8 +136,10 @@ def run_training(args):
         checkpoint(run/"latest.pt",model,optimizer,dict(steps=steps,episodes=episodes,updates=updates,
             recent=list(recent),training_seeds=sorted(training_seeds),numpy_rng=np.random.get_state(),
             frames=args.frames,entropy_coef=args.entropy_coef,architecture=1,source_hashes=config["source_hashes"],losses=losses,
+            timing_profile=args.timing_profile,control_timing=control.manifest(),training_schedule=schedule,
+            native_frames=native_frames,native_frames_origin_steps=native_frames_origin_steps,
             observation_profile=args.observation_profile,reward_profile=args.reward_profile,
-            reward=profile_manifest(args.reward_profile),created=time.time()))
+            reward=profile_manifest(args.reward_profile,control),created=time.time()))
         atomic_json(run/"training_seeds.json",sorted(training_seeds))
         status["checkpoint_steps"] = steps
     try:
@@ -135,6 +150,7 @@ def run_training(args):
         with (run/"episodes.jsonl").open("a",buffering=1) as episode_file, (run/"updates.jsonl").open("a",buffering=1) as update_file:
             while (args.steps == 0 or steps < args.steps) and not stop_requested:
                 rollout_started, timing = time.perf_counter(), {}
+                rollout_native_start = native_frames
                 rollout = {key:[] for key in ["obs","actions","log_probs","values","rewards","next_values","terminated","ended"]}
                 for _ in range(args.rollout if args.steps == 0 else min(args.rollout,args.steps-steps)):
                     with measure(timing,"inference_s",args.device), torch.no_grad():
@@ -149,6 +165,7 @@ def run_training(args):
                     for key,val in transition.items():
                         rollout[key].append(val)
                     steps += 1
+                    native_frames += info.get("frame_delta",0)
                     obs = next_obs
                     if terminated or truncated:
                         episodes += 1
@@ -170,13 +187,17 @@ def run_training(args):
                         break
                 update_status(status="optimizing")
                 with measure(timing,"update_s",args.device):
-                    losses = optimize(model,optimizer,rollout,device=args.device,entropy_coef=args.entropy_coef)
+                    losses = optimize(model,optimizer,rollout,device=args.device,entropy_coef=args.entropy_coef,
+                                      batch_size=args.batch_size,gamma=control.gamma,lam=control.lam)
                 updates += 1
                 with measure(timing,"save_s"):
                     save()
                 timing["wall_s"] = time.perf_counter()-rollout_started
                 rollout_sps = len(rollout["obs"])/timing["wall_s"]
                 update_file.write(json.dumps(dict(time=time.time(),session_id=session_name,steps=steps,updates=updates,
+                    frames=args.frames,timing_profile=args.timing_profile,control_timing=control.manifest(),
+                    native_frames=native_frames,native_frames_origin_steps=native_frames_origin_steps,
+                    rollout_native_frames=native_frames-rollout_native_start,
                     timing=timing,rollout_sps=rollout_sps,device=args.device,entropy_coef=args.entropy_coef,**losses))+"\n")
                 update_status(info,status="training",timing=timing,rollout_sps=rollout_sps,**losses)
                 print(f"update={updates} steps={steps} loss={losses['loss']:.5f} entropy={losses['entropy']:.3f} sps={status['sps']:.2f}",flush=True)

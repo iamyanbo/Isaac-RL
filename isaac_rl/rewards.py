@@ -1,9 +1,10 @@
 """Versioned learning rewards; game physics and the boss-clear gate are unchanged."""
 from dataclasses import asdict, dataclass, replace
 import math
+from .timing import BASE_GAMMA, ControlTiming
 
 
-GAMMA = 0.995
+GAMMA = BASE_GAMMA
 
 
 @dataclass(frozen=True)
@@ -32,8 +33,11 @@ PROFILES = {
 PROFILES["confirmed_v3"] = replace(PROFILES["balanced_v2"],damage_signal="hp_delta_v1")
 
 
-def profile_manifest(name):
-    return dict(name=name,gamma=GAMMA,**asdict(PROFILES[name]))
+def profile_manifest(name, control=None):
+    control = control or ControlTiming()
+    values = asdict(PROFILES[name])
+    values["time"] *= control.scale
+    return dict(name=name,gamma=control.gamma,**values)
 
 
 def door_potential(state, scale):

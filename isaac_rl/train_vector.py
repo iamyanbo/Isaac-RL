@@ -18,6 +18,7 @@ from .storage import atomic_json, checkpoint, load_snapshot, source_fingerprint
 from .rewards import PROFILES, profile_manifest
 from .vector import ParallelIsaac
 from .runtime import RunLease, measure, commit_memory
+from .timing import TIMING_PROFILES, configure_training
 
 
 def rollout_length(steps, target, rollout, environments):
@@ -35,18 +36,19 @@ def main():
     parser.add_argument("--ports",type=int,nargs="+",default=[9999,10000,10001])
     parser.add_argument("--resume",type=Path)
     parser.add_argument("--steps",type=int,default=0,help="Aggregate step cap; 0 (default) runs indefinitely")
-    parser.add_argument("--rollout",type=int,default=128,help="Steps per environment per update")
-    parser.add_argument("--batch-size",type=int,default=128)
-    parser.add_argument("--frames",type=int,default=8)
-    parser.add_argument("--max-episode-steps",type=int,default=3375)
-    parser.add_argument("--idle-limit",type=int,default=450)
+    parser.add_argument("--rollout",type=int,help="Steps per environment; inherits checkpoint or time-normalized default")
+    parser.add_argument("--batch-size",type=int)
+    parser.add_argument("--frames",type=int,help="Inherit checkpoint hold; eight ticks for new runs")
+    parser.add_argument("--timing-profile",choices=TIMING_PROFILES,help="physical_v1 preserves physical-time quantities when changing hold")
+    parser.add_argument("--max-episode-steps",type=int)
+    parser.add_argument("--idle-limit",type=int)
     parser.add_argument("--seed",type=int,default=20260912)
     parser.add_argument("--device",default="cpu")
     parser.add_argument("--entropy-coef",type=float,help="Inherit checkpoint value; old checkpoints/new runs default to 0.02")
     parser.add_argument("--reward-profile",choices=list(PROFILES),help="Defaults to checkpoint profile on resume; balanced_v2 for new runs")
     parser.add_argument("--observation-profile",choices=OBSERVATION_PROFILES)
     args = parser.parse_args()
-    if args.steps < 0 or args.rollout < 1 or args.batch_size < 1:
+    if args.steps < 0 or any(v is not None and v < 1 for v in (args.rollout,args.batch_size)):
         parser.error("Steps must be nonnegative; rollout and batch size must be positive")
     with RunLease(args.run):
         run_training(args)
@@ -68,8 +70,8 @@ def run_training(args):
     saved = None
     if args.resume:
         saved,parent_digest,_ = load_snapshot(args.resume,args.device)
-        if saved["architecture"] != 1 or saved["frames"] != args.frames:
-            raise RuntimeError("Checkpoint architecture or action duration differs")
+        if saved["architecture"] != 1:
+            raise RuntimeError("Checkpoint architecture differs")
         model.load_state_dict(saved["model"])
         optimizer.load_state_dict(saved["optimizer"])
         torch.set_rng_state(saved["torch_rng"].cpu())
@@ -99,13 +101,23 @@ def run_training(args):
         losses = {}
     args.reward_profile = args.reward_profile or "balanced_v2"
     args.entropy_coef = resolve_entropy_coef(args.entropy_coef,saved,(run/"status.json").exists())
+    previous_config = json.loads((run/"config.json").read_text()) if (run/"config.json").exists() else None
+    control,schedule,timing_changed = configure_training(args,saved,(run/"status.json").exists(),previous_config)
+    if timing_changed:
+        recent.clear()
+        losses = {}
+    native_frames = (saved or {}).get("native_frames",0)
+    native_frames_origin_steps = (saved or {}).get("native_frames_origin_steps",steps)
+    origin.update(parent_frames=saved.get("frames") if saved else None,
+                  parent_timing_profile=saved.get("timing_profile","legacy_v1") if saved else None)
     config = {key:str(value) if isinstance(value,Path) else value for key,value in vars(args).items()}
     config.update(architecture=1,algorithm="PPO",mode="full_floor",origin=origin,
-        reward=profile_manifest(args.reward_profile),source_hashes=source_fingerprint(root))
+        reward=profile_manifest(args.reward_profile,control),control_timing=control.manifest(),
+        training_schedule=schedule,source_hashes=source_fingerprint(root))
     session_name = f"session-{time.time_ns()}"
     atomic_json(run/f"{session_name}.json",config)
     atomic_json(run/"config.json",config)
-    collector = ParallelIsaac(args.ports,args.frames,args.max_episode_steps,args.idle_limit,args.reward_profile,args.observation_profile)
+    collector = ParallelIsaac(args.ports,args.frames,args.max_episode_steps,args.idle_limit,args.reward_profile,args.observation_profile,args.timing_profile)
     count = len(args.ports)
     started,initial_steps = time.time(),steps
     stop_requested = False
@@ -120,9 +132,11 @@ def run_training(args):
         checkpoint_steps=steps,exit_code=None,
         time=time.time(),message=f"Waiting for {count} independently saved normal game instances",**losses)
     status["entropy_coef"] = args.entropy_coef
+    status.update(frames=args.frames,timing_profile=args.timing_profile,control_timing=control.manifest(),
+                  native_frames_origin_steps=native_frames_origin_steps)
     atomic_json(run/"status.json",status)
     def report(infos=None, **fields):
-        status.update(time=time.time(),steps=steps,episodes=episodes,updates=updates,
+        status.update(time=time.time(),steps=steps,episodes=episodes,updates=updates,native_frames=native_frames,
             recent_successes=sum(e["success"] for e in recent),recent_episodes=len(recent),
             mean_reward=float(np.mean([e["r"] for e in recent])) if recent else 0,
             sps=(steps-initial_steps)/max(time.time()-started,1))
@@ -138,8 +152,10 @@ def run_training(args):
             recent=list(recent),training_seeds=sorted(seeds),numpy_rng=np.random.get_state(),
             cuda_rng=torch.cuda.get_rng_state_all() if args.device.startswith("cuda") else None,
             frames=args.frames,entropy_coef=args.entropy_coef,architecture=1,source_hashes=config["source_hashes"],origin=origin,
+            timing_profile=args.timing_profile,control_timing=control.manifest(),training_schedule=schedule,
+            native_frames=native_frames,native_frames_origin_steps=native_frames_origin_steps,
             ports=args.ports,losses=losses,reward_profile=args.reward_profile,
-            reward=profile_manifest(args.reward_profile),observation_profile=args.observation_profile,created=time.time()))
+            reward=profile_manifest(args.reward_profile,control),observation_profile=args.observation_profile,created=time.time()))
         atomic_json(run/"training_seeds.json",sorted(seeds))
         # Bounded live snapshots allow behavior audits without a second client
         # taking a game port, or unbounded raw training traces.
@@ -161,6 +177,7 @@ def run_training(args):
                 if not length:
                     break
                 rollout_started = time.perf_counter()
+                rollout_native_start = native_frames
                 timing = {}
                 rollout = {key:[] for key in ["obs","actions","log_probs","values","rewards","next_values","terminated","ended"]}
                 for _ in range(length):
@@ -181,6 +198,7 @@ def run_training(args):
                     for key,val in transition.items():
                         rollout[key].append(val)
                     steps += count
+                    native_frames += sum(info.get("frame_delta",0) for info in infos)
                     for i in np.flatnonzero(ended):
                         episodes += 1
                         record = dict(time=time.time(),session_id=session_name,episode=episodes,steps=steps,port=args.ports[i],**infos[i]["episode"])
@@ -207,7 +225,7 @@ def run_training(args):
                 report(status="optimizing")
                 with measure(timing,"update_s",args.device):
                     losses = optimize(model,optimizer,rollout,device=args.device,batch_size=args.batch_size,
-                                      entropy_coef=args.entropy_coef)
+                                      entropy_coef=args.entropy_coef,gamma=control.gamma,lam=control.lam)
                 updates += 1
                 with measure(timing,"save_s"):
                     save()
@@ -216,6 +234,9 @@ def run_training(args):
                 rollout_sps = len(rollout["obs"])*count/timing["wall_s"]
                 memory = commit_memory()
                 update_file.write(json.dumps(dict(time=time.time(),session_id=session_name,steps=steps,updates=updates,num_envs=count,
+                    frames=args.frames,timing_profile=args.timing_profile,control_timing=control.manifest(),
+                    native_frames=native_frames,native_frames_origin_steps=native_frames_origin_steps,
+                    rollout_native_frames=native_frames-rollout_native_start,
                     device=args.device,entropy_coef=args.entropy_coef,timing=timing,rollout_sps=rollout_sps,commit_memory=memory,**losses))+"\n")
                 report(infos,status="training",timing=timing,rollout_sps=rollout_sps,commit_memory=memory,**losses)
                 print(f"update={updates} steps={steps} loss={losses['loss']:.5f} entropy={losses['entropy']:.3f} sps={status['sps']:.2f}",flush=True)

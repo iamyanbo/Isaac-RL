@@ -77,10 +77,10 @@ def compute_gae(rewards, values, next_values, terminated, ended, gamma=GAMMA, la
 
 
 def optimize(model, optimizer, rollout, device="cpu", epochs=4, batch_size=64,
-             clip=0.2, entropy_coef=DEFAULT_ENTROPY_COEF, target_kl=0.025):
+             clip=0.2, entropy_coef=DEFAULT_ENTROPY_COEF, target_kl=0.025, gamma=GAMMA, lam=0.95):
     entropy_coef = resolve_entropy_coef(entropy_coef)
     advantages,returns = compute_gae(rollout["rewards"],rollout["values"],rollout["next_values"],
-                                    rollout["terminated"],rollout["ended"])
+                                    rollout["terminated"],rollout["ended"],gamma=gamma,lam=lam)
     # Rollouts may be [time] or [time, independent environments]. Compute GAE
     # along time first, then flatten for SGD; never join different games' returns.
     obs = {}

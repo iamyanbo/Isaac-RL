@@ -5,6 +5,8 @@ param(
     [ValidateRange(0,2147483647)][int]$Steps = 0,
     [ValidateSet('cpu','cuda')][string]$Device = 'cpu',
     [ValidateRange(0,1)][double]$EntropyCoef = 0.02,
+    [ValidateRange(1,30)][int]$Frames = 8,
+    [ValidateSet('legacy_v1','physical_v1')][string]$TimingProfile = 'legacy_v1',
     [switch]$Resume,
     [string]$Initialize = '',
     [ValidateSet('', 'legacy_v1', 'balanced_v2', 'confirmed_v3')][string]$RewardProfile = '',
@@ -44,6 +46,8 @@ New-Item -ItemType Directory -Path $runPath -Force | Out-Null
 $trainArgs = @('-u','-m','isaac_rl.train_vector','--run',('"' + $runPath + '"'),'--ports') + @($ports | ForEach-Object { [string]$_ })
 $trainArgs += @('--steps',[string]$Steps)
 $trainArgs += @('--device',$Device)
+if ($PSBoundParameters.ContainsKey('Frames')) { $trainArgs += @('--frames',[string]$Frames) }
+if ($PSBoundParameters.ContainsKey('TimingProfile')) { $trainArgs += @('--timing-profile',$TimingProfile) }
 if ($PSBoundParameters.ContainsKey('EntropyCoef')) {
     $trainArgs += @('--entropy-coef',$EntropyCoef.ToString([System.Globalization.CultureInfo]::InvariantCulture))
 }

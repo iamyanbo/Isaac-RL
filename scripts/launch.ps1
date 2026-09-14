@@ -1,6 +1,8 @@
 param(
     [string]$Run = 'runs/ppo-normal-v1',
     [ValidateRange(0,1)][double]$EntropyCoef = 0.02,
+    [ValidateRange(1,30)][int]$Frames = 8,
+    [ValidateSet('legacy_v1','physical_v1')][string]$TimingProfile = 'legacy_v1',
     [switch]$Resume,
     [switch]$NoMonitor,
     [ValidateRange(1024,65535)][int]$DashboardPort = 8765
@@ -23,6 +25,8 @@ if (-not $runningGame) {
     $game = Start-Process -FilePath $gamePath -ArgumentList '--luadebug' -WorkingDirectory (Split-Path -Parent $gamePath) -WindowStyle Hidden -PassThru
 }
 $trainArgs = @('-u','-m','isaac_rl.train','--run',('"' + $runPath + '"'))
+if ($PSBoundParameters.ContainsKey('Frames')) { $trainArgs += @('--frames',[string]$Frames) }
+if ($PSBoundParameters.ContainsKey('TimingProfile')) { $trainArgs += @('--timing-profile',$TimingProfile) }
 if ($PSBoundParameters.ContainsKey('EntropyCoef')) {
     $trainArgs += @('--entropy-coef',$EntropyCoef.ToString([System.Globalization.CultureInfo]::InvariantCulture))
 }

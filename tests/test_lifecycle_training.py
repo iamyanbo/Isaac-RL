@@ -30,10 +30,12 @@ def test_close_does_not_wait_gameplay_timeout_for_unresponsive_game():
 
 @pytest.mark.parametrize("fail",[False,True])
 @pytest.mark.parametrize("entropy_coef",[None,0.002])
-def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path,monkeypatch,fail,entropy_coef):
+@pytest.mark.parametrize("physical",[False,True])
+def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path,monkeypatch,fail,entropy_coef,physical):
     class FakeGames:
         closed = False
         def __init__(self,ports,*args):
+            self.frames = args[0]
             self.envs = [SimpleNamespace(state={},episode_reward=0.,steps=0) for _ in ports]
             self.n = len(ports)
         def observation(self):
@@ -43,7 +45,7 @@ def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path
                 raise ConnectionResetError("fake worker failed")
             return self.observation(),[dict(game_seed=f"FAKE {i}") for i in range(self.n)]
         def step(self,actions):
-            return self.observation(),np.zeros(self.n,np.float32),np.zeros(self.n,bool),np.zeros(self.n,bool),[{} for _ in range(self.n)]
+            return self.observation(),np.zeros(self.n,np.float32),np.zeros(self.n,bool),np.zeros(self.n,bool),[dict(frame_delta=self.frames) for _ in range(self.n)]
         def reset_done(self,obs,ended):
             return {}
         def close(self):
@@ -52,6 +54,15 @@ def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path
     arguments = ["train_vector","--run",str(tmp_path),"--ports","18000","18001","--steps","4","--rollout","2"]
     if entropy_coef is not None:
         arguments += ["--entropy-coef",str(entropy_coef)]
+    if physical:
+        arguments += ["--frames","4","--timing-profile","physical_v1"]
+    original_optimize = train_vector.optimize
+    def checked_optimize(*a,**kw):
+        assert kw["gamma"] == pytest.approx(.995**(.5 if physical else 1))
+        assert kw["lam"] == pytest.approx(.95**(.5 if physical else 1))
+        assert kw["batch_size"] == (256 if physical else 128)
+        return original_optimize(*a,**kw)
+    monkeypatch.setattr(train_vector,"optimize",checked_optimize)
     monkeypatch.setattr(sys,"argv",arguments)
     if fail:
         with pytest.raises(ConnectionResetError):
@@ -67,13 +78,19 @@ def test_vector_session_has_finite_or_error_terminal_and_releases_lease(tmp_path
         assert update["entropy_coef"] == expected_entropy
         saved = torch.load(tmp_path/"latest.pt",weights_only=False)
         assert saved["entropy_coef"] == expected_entropy
+        assert saved["frames"] == (4 if physical else 8)
+        assert saved["native_frames"] == 4*saved["frames"]
+        assert saved["training_schedule"]["idle_limit"] == (900 if physical else 450)
         assert json.loads((tmp_path/"config.json").read_text())["entropy_coef"] == expected_entropy
         # Omitted CLI value must inherit the checkpoint on resume, not reset to .02.
         monkeypatch.setattr(sys,"argv",["train_vector","--run",str(tmp_path),"--ports","18000","18001",
-            "--steps","8","--rollout","2","--resume",str(tmp_path/"latest.pt")])
+            "--steps","8","--resume",str(tmp_path/"latest.pt")])
         train_vector.main()
         resumed = torch.load(tmp_path/"latest.pt",weights_only=False)
         assert resumed["steps"] == 8 and resumed["entropy_coef"] == expected_entropy
+        assert resumed["frames"] == saved["frames"]
+        assert resumed["training_schedule"] == saved["training_schedule"]
+        assert resumed["native_frames"] == 8*saved["frames"]
     state = json.loads((tmp_path/"status.json").read_text())
     assert state["cleanup_complete"] and FakeGames.closed
     assert state["exit_code"] == (1 if fail else 0)

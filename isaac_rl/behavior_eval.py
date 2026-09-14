@@ -25,6 +25,7 @@ from .evaluate import canonical_seed, park_after_evaluation
 from .observation import resolve_observation_profile
 from .ppo import ActorCritic, as_tensor
 from .storage import atomic_json, load_snapshot, source_fingerprint
+from .timing import configure_evaluation
 
 
 ARMS = ("deterministic", "stochastic", "stochastic_no_move_combat")
@@ -223,15 +224,16 @@ def main():
     parser.add_argument("--seeds", type=int, default=20)
     parser.add_argument("--arms", nargs="+", choices=AVAILABLE_ARMS, default=list(ARMS))
     parser.add_argument("--repetitions", type=int, default=1)
-    parser.add_argument("--max-episode-steps", type=int, default=3375)
-    parser.add_argument("--idle-limit", type=int, default=900)
+    parser.add_argument("--max-episode-steps", type=int)
+    parser.add_argument("--idle-limit", type=int)
     args = parser.parse_args()
-    if min(args.seeds, args.repetitions, args.max_episode_steps, args.idle_limit) < 1:
+    if min(args.seeds, args.repetitions) < 1 or any(v is not None and v < 1 for v in (args.max_episode_steps,args.idle_limit)):
         parser.error("Counts and limits must be positive")
     if len(set(args.arms)) != len(args.arms):
         parser.error("Arms must be unique")
     torch.set_num_threads(2)
     saved, digest, payload = load_snapshot(args.checkpoint)
+    control = configure_evaluation(args,saved)
     if saved["architecture"] != 1:
         raise ValueError("Unsupported architecture")
     model = ActorCritic()
@@ -246,6 +248,7 @@ def main():
     manifest = dict(purpose="diagnostic_only", checkpoint_steps=saved["steps"],
         checkpoint_sha256=digest, checkpoint_source=str(args.checkpoint.resolve()),
         frames=saved["frames"], max_episode_steps=args.max_episode_steps, idle_limit=args.idle_limit,
+        timing_profile=control.profile,control_timing=control.manifest(),
         seeds_requested=args.seeds, arms=args.arms, repetitions=args.repetitions,
         port=args.port, observation_profile=profile,
         reward_profile=saved.get("reward_profile", "legacy_v1"),
@@ -274,7 +277,7 @@ def main():
     try:
         env = IsaacEnv(Bridge(port=args.port, trace=output/"trace.jsonl"), frames=saved["frames"],
             max_steps=args.max_episode_steps, idle_limit=args.idle_limit,
-            reward_profile=manifest["reward_profile"], observation_profile=profile)
+            reward_profile=manifest["reward_profile"], observation_profile=profile,timing_profile=control.profile)
         with (output/"transitions.jsonl").open("x", buffering=1) as stream, (output/"episodes.jsonl").open("x", buffering=1) as episodes:
             for pair in range(args.seeds):
                 for _ in range(1000):

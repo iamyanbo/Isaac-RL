@@ -16,6 +16,7 @@ import psutil
 import torch
 
 from .ppo import ActorCritic, optimize
+from .timing import checkpoint_timing
 from .storage import atomic_json, load_snapshot, source_fingerprint
 from .vector import ParallelIsaac
 from .runtime import commit_memory
@@ -49,8 +50,10 @@ def model_pair(saved, device):
 
 def collect(saved, ports, length):
     model, _ = model_pair(saved, "cpu")
-    collector = ParallelIsaac(ports, saved["frames"], 3375, 450,
-        saved["reward_profile"], saved["observation_profile"])
+    control = checkpoint_timing(saved)
+    schedule = saved.get("training_schedule",{})
+    collector = ParallelIsaac(ports, saved["frames"],schedule.get("max_episode_steps",control.steps(3375)),
+        schedule.get("idle_limit",control.steps(450)),saved["reward_profile"], saved["observation_profile"],control.profile)
     rollout = {key:[] for key in ("obs","actions","log_probs","values","rewards","next_values","terminated","ended")}
     timing = dict(collection_s=0., inference_s=0., reset_s=0.)
     completed = []
@@ -102,6 +105,7 @@ def collect(saved, ports, length):
 
 
 def update_benchmark(saved, rollout, repeats, devices=None):
+    control = checkpoint_timing(saved)
     devices = devices or (["cpu"] + (["cuda"] if torch.cuda.is_available() else []))
     results = {d:dict(update_s=[], full_four_epoch_s=[], inference_batch_s=[]) for d in devices}
     # Alternate order to reduce thermal/load order bias. Each measurement starts
@@ -113,7 +117,9 @@ def update_benchmark(saved, rollout, repeats, devices=None):
                 np.random.seed(9132026)
                 sync(device)
                 t = time.perf_counter()
-                metrics = optimize(model,optimizer,rollout,device=device,batch_size=128,
+                metrics = optimize(model,optimizer,rollout,device=device,
+                    batch_size=saved.get("training_schedule",{}).get("batch_size",control.steps(128)),
+                    entropy_coef=saved.get("entropy_coef",.02),gamma=control.gamma,lam=control.lam,
                     target_kl=float("inf") if full else .025)
                 sync(device)
                 elapsed = time.perf_counter()-t

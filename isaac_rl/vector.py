@@ -12,14 +12,14 @@ def stack_obs(observations):
 
 
 class ParallelIsaac:
-    def __init__(self,ports,frames=8,max_steps=3375,idle_limit=450,reward_profile="legacy_v1",observation_profile="legacy_v1"):
+    def __init__(self,ports,frames=8,max_steps=3375,idle_limit=450,reward_profile="legacy_v1",observation_profile="legacy_v1",timing_profile="legacy_v1"):
         if not ports or len(set(ports)) != len(ports):
             raise ValueError("Provide unique worker ports")
         self.ports = list(ports)
         self.envs = []
         try:
             for port in ports:
-                self.envs.append(IsaacEnv(Bridge(port=port),frames,max_steps,idle_limit,reward_profile,observation_profile))
+                self.envs.append(IsaacEnv(Bridge(port=port),frames,max_steps,idle_limit,reward_profile,observation_profile,timing_profile))
         except Exception:
             for env in self.envs:
                 env.close()
