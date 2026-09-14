@@ -1,6 +1,22 @@
 # Current handoff — 2026-09-14
 
-## CURRENT: user-directed adaptation implemented; six-worker handover needs authority
+## CURRENT: lower-entropy six-worker training LIVE; authorized handover completed
+
+The user explicitly answered **"yes"** to one checkpointed stop of the existing learner and launch on the same six workers. Handover completed. **Current learner PID21432**, process creation **1789397760.954275**, session **`session-1789397765416817800`**, run **`runs/ppo-entropy-v5`**, CPU, six workers0/1/2/4/5/6, uncapped. **Never stop this learner**; the one-time approval is consumed, not an auto-restart policy.
+
+Only training factor changed: **entropy coefficient0.02→0.002**. Rewards, observations, architecture, optimizer hyperparameters, rollout128 per worker/minibatch128/epochs4, eight-update actions, episode limits, seed setting and six-worker count verified unchanged against the baseline configuration. All six runtime bridge files retain the original hash. New checkpoint metadata records0.002 and inherits it on resume.
+
+Preserved parent **2,417,208 steps**, SHA256 **eeffc748b50552e5947e3575585d92e1294f60dadc6b0f8e94996ac026a294ae**, remains `runs/entropy-intervention-20260914/baseline.pt`; the new run's `parent.pt` matches exactly. Old learner51580 saved/exited normally at **2,425,314 steps / 7,916 episodes / 3,440 updates**, exit code0, cleanup complete, exact PID identity absent and ports released before launching. Archived old final checkpoint hash **d9759e25ca650403db30d4e6750397e30f1272bf1a51e0526d332bcf4fca8170**, plus final status/states/authorized stop marker in the intervention folder. Old `runs/ppo-damage-v4/stop.request` intentionally remains to guard accidental resume. No files or old learned weights were deleted. New aggregate counters start at the earlier frozen parent intentionally.
+
+Native games reused unchanged:0=6996,1=13120,2=34576,4=24640,5=39876,6=25388. Instance6 reached Game Over during the gap and was the only unconnected worker. Captured/inspected its screen, guarded on listener21432 plus no established10005 connection, then sent its normal Space restart input. It reconnected and started normal training; no game process or new learner was killed/restarted. Temporary window visibility restored to hidden. Screenshot evidence in the intervention folder.
+
+**First real optimized checkpoint verified:2,417,976 / update3430**, full768 transitions, coefficient0.002 in config/checkpoint/update/status, model weights finite and changed from parent, Adam parameter groups unchanged. Archived `first-observed-treatment.pt` hash **c5b2e7d5ba224810b410529743faa2fb0c22419c66ef534e86526a30eb47e306**. Collection37.021s/update0.357s/wall39.699s/19.35 transitions/s. Second update3431 also completed; learner observed alive above2,419,416. All six established sockets owned21432, stderr `runs/ppo-entropy-v5/stderr-20260914-105600.log` empty. Windows commit~94.98%,~4.79GiB available. These are bounded execution observations, not perpetual liveness or learning-success claims.
+
+**New charts http://127.0.0.1:8766/**, dashboard **PID52888**, start1789397761.659211, verified HTTP serves the new run. Old dashboard6604/8765 remains read-only baseline history and shows old learner dead. Existing independent diagnostic6968/10002 continues separately; **do not wait on it before assessing the active training intervention or revert to diagnosis-only work**.
+
+Next review target: **2,717,208 total steps (+300k treatment)**, then3,017,208 (+600k), without stopping training. Inspect newly collected episode records and full-floor evaluation; entropy/return/movement alone are not competence. Do not add a second intervention before assessing this one. Implementation tests84passed in preceding turn; no source changes beyond launch documentation this turn. Goal remains consistent unseen full first-floor boss clears, unproven. End bounded reviews with PAUSE.
+
+## Historical: user-directed adaptation implemented before handover approval
 
 Latest user instruction supersedes waiting for diagnostic completion: **stop diagnosis-only work, choose one high-value adaptation, keep everything else constant, preserve the current checkpoint, launch next training**. Chosen sole training change: PPO entropy coefficient **0.02→0.002**. See `EXPERIMENT-20260914.md`. Do not continue the earlier pattern of waiting for120 diagnostic episodes before this intervention.
 

@@ -10,7 +10,9 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 Selected and implemented one change: **PPO entropy coefficient0.02 →0.002**. All six-worker training settings, rewards, observations, architecture, optimizer, and eight-update actions stay unchanged. The baseline at2,417,208 steps is preserved in `runs/entropy-intervention-20260914/baseline.pt`. See [the training experiment](EXPERIMENT-20260914.md).
 
-The next run, `runs/ppo-entropy-v5`, is **prepared, not launched**: reusing the current six workers requires a one-time checkpointed handover, which needs an exception to the user's standing never-stop-live-training instruction. No new diagnostic result is required. The learner is not being replaced with a one-worker experiment or duplicated under95.7% Windows commit pressure.
+**Current live run: `runs/ppo-entropy-v5`, six workers, CPU, entropy coefficient0.002.** The user authorized one checkpointed handover: the old learner exited cleanly at2,425,314 steps and its final state was archived. New learner21432 starts from the preserved2,417,208 baseline; its first full update at2,417,976 was verified with finite changed weights and all six connections. No extra native processes or training-factor changes were introduced. The never-stop-live-training rule now applies to this new learner.
+
+**Current charts: http://127.0.0.1:8766/**. The previous dashboard on8765 remains available for baseline history and correctly reports its learner dead. Older run descriptions below are historical. Reopen the new history service with `.\scripts\launch_dashboard.ps1 -Run runs/ppo-entropy-v5 -Port 8766`; do not relaunch a live learner.
 
 The trainers and launchers now accept `--entropy-coef` / `-EntropyCoef`. Omission inherits the checkpoint value (legacy checkpoints default0.02); saved checkpoints and update/status/config telemetry record the coefficient. Changing it requires a new run directory.
 
