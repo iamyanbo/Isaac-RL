@@ -71,10 +71,39 @@ combat clears and health retention on held-out seeds, not just shaped returns.
 
 ## Handover status
 
-Implementation/testing in progress; the six-worker entropy learner remains live.
-After tests: checkpointed stop, verify exact old identity has exited, archive its
-final checkpoint/config/status, then start the new learner on the same six games.
-This authorization is for this one handover only.
+Completed after **108 passing tests**, both PowerShell launcher parse checks and
+Git diff checks. Implementation commit **f17378b**. The old entropy learner21432
+saved/exited normally at **2,470,092 steps / 8,094 episodes / 3,498 updates**,
+exit0/cleanup complete. Its final checkpoint is the baseline, SHA256
+**2e4830a744508c4a98ba157e4806eedb7d5000c99e026cc6115f6fc84fd33b50**;
+new `parent.pt` matches byte for byte. Parent final state/config/status, pre-handover
+checkpoint and authorization marker remain in the archive. No files deleted.
+
+New learner **20984**, creation1789400666.5494964, session
+`session-1789400670817434800`, launched11:44 Toronto on the same six games without
+restarting any native process. All training sockets belong to it and all six
+workers report four-tick deltas. The old stop.request remains in the old run as a
+guard. The one-time handover authorization is consumed; preserve the new learner.
+
+First full update3499 at **2,471,628**: 1,536 transitions,6,141 actual native ticks,
+collection37.391s/PPO0.660s/wall40.199s,38.21 aggregate decisions/s. Early death
+accounts for the three-tick shortfall from nominal6,144. Commit96.67% with3.21GiB
+available at that update. Training remains collection-dominated. These timings are
+execution verification, not evidence of learning success.
+
+The immutable `first-observed-control.pt` is update3500 at **2,473,164**, SHA256
+**6dd8cc9a0e247f67add3cc370b46f6cc91682f4b9ff75dc1f3e69375243c4ce4**.
+It contains12,282 controlled ticks; all16 parameter tensors changed and are finite,
+Adam parameter groups match the parent, and all checkpoint/config control settings
+match the declared conversions. Source fingerprints and runtime bridge hashes
+verified. Empty stderr at verification. Current charts
+**http://127.0.0.1:8767/**, dashboard52820, HTTP verified correct run/learner.
+Older dashboards8766/8765 retain baseline history. Independent evaluator6968 was
+left running unchanged on10002.
+
+The launch used the equivalent direct trainer invocation below after verifying all
+six games were already alive and their ports released. The standard launcher also
+supports these arguments and reuses existing games:
 
 ```powershell
 .\scripts\launch_parallel.ps1 -Run runs/ppo-control-v6 -Instances 0,1,2,4,5,6 `

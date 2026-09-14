@@ -6,7 +6,31 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
-### Next training adaptation — September 14
+### Current training — four-tick control, September 14
+
+**Live: `runs/ppo-control-v6`, six workers, CPU, four native ticks/action (133 ms).**
+The user authorized this timing intervention after the native trace audit.
+Discount/GAE decay, time cost, episode/idle budgets, rollout/minibatch sizes and
+visit-map intensity were converted to preserve physical-time meaning. Architecture,
+action heads, combat reward terms, native physics and entropy0.002 remain unchanged.
+See [the control experiment](EXPERIMENT-CONTROL-20260914.md) for exact conversions.
+
+Baseline **2,470,092 steps** preserved at `runs/control-intervention-20260914/baseline.pt`.
+The old learner exited cleanly; new learner20984 reused all six native games. First
+full PPO update verified at2,471,628,38.21 aggregate decisions/s. Optimized weights,
+checkpoint inheritance and four-tick worker advancement verified;108 tests passed.
+Training success is still unproven. Do not stop/relaunch a live learner.
+
+**Current charts: http://127.0.0.1:8767/**. Reopen only the history service with
+`.\scripts\launch_dashboard.ps1 -Run runs/ppo-control-v6 -Port 8767`.
+Plain resume inherits `physical_v1`, four frames, and converted schedules from the
+checkpoint; no timing change is permitted inside an existing run. Old8766/8765
+dashboards remain baseline history. See OPERATIONS.md for exact process identities.
+
+Working rule: **hyperparameter tuning in general is not the default first
+intervention**. Prioritize evidence-backed mechanism fixes; see [AGENTS.md](AGENTS.md).
+
+### Historical entropy intervention — September 14
 
 Selected and implemented one change: **PPO entropy coefficient0.02 →0.002**. All six-worker training settings, rewards, observations, architecture, optimizer, and eight-update actions stay unchanged. The baseline at2,417,208 steps is preserved in `runs/entropy-intervention-20260914/baseline.pt`. See [the training experiment](EXPERIMENT-20260914.md).
 

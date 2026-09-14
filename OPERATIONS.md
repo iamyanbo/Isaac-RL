@@ -1,13 +1,56 @@
 # Current handoff — 2026-09-14
 
-## CURRENT: four-tick control intervention authorized; preparing handover
+## CURRENT: four-tick six-worker training LIVE; handover completed
 
-The user said **"make the changes"** after the verified action-hold audit, authorizing
-this next checkpointed handover on the same six workers. Implementation uses
-four ticks/action with explicit physical-time conversions; see
-`EXPERIMENT-CONTROL-20260914.md`. Current entropy learner21432 remains running while
-tests finish. Target `runs/ppo-control-v6`, archive `runs/control-intervention-20260914`,
-charts8767. Do not add workers or interrupt independent evaluator6968.
+The user said **"make the changes"** after the verified action-hold audit. That
+one checkpointed handover is now COMPLETE. **Current learner PID20984**, creation
+**1789400666.5494964**, session **`session-1789400670817434800`**, run
+**`runs/ppo-control-v6`**, CPU/two Torch threads, six workers0/1/2/4/5/6, uncapped.
+Never stop this new learner without further user direction; no auto-restart policy.
+See `EXPERIMENT-CONTROL-20260914.md` for the timing experiment and exact conversions.
+
+Four ticks/action (133 ms), physical_v1, gamma0.997496867163, lambda0.974679434481,
+time cost-0.005/full action, max6750 actions/idle900, rollout256/env/batch256,
+visit count multiplier0.5. These preserve physical-time quantities and nominal
+SGD steps per simulated time. Keep entropy0.002, event rewards, architecture,
+action heads, observation layout, optimizer settings and native physics unchanged.
+
+Old learner21432 saved/exited normally at **2,470,092 steps / 8,094 episodes /
+3,498 updates**, exit0/cleanup complete, exact old identity absent and six ports
+released before launch. Final baseline preserved as
+`runs/control-intervention-20260914/baseline.pt`, SHA256
+**2e4830a744508c4a98ba157e4806eedb7d5000c99e026cc6115f6fc84fd33b50**.
+New run's `parent.pt` matches exactly. Parent config/final status/final states and
+authorized stop marker archived alongside. Older entropy baseline retained.
+Old `runs/ppo-entropy-v5/stop.request` intentionally remains to prevent accidental
+resume. No files deleted. All native games reused without restarts or menu input:
+0=6996,1=13120,2=34576,4=24640,5=39876,6=25388; runtime bridge hashes unchanged.
+
+First full update **3499 / 2,471,628 steps**, 1,536 transitions, 6,141 actual native
+ticks (three fewer than full holds because of early death), collection37.391s,
+PPO0.660s, wall40.199s, **38.21 decisions/s aggregate**. Independently archived
+optimized checkpoint after update3500 at2,473,164, native ticks12,282, SHA256
+**6dd8cc9a0e247f67add3cc370b46f6cc91682f4b9ff75dc1f3e69375243c4ce4**,
+`first-observed-control.pt`: all16 model tensors changed and finite, Adam groups
+unchanged, metadata/schedule/entropy correct. Source fingerprints match. All six
+ports owned20984; all six worker frame deltas observed4. Empty learner stderr
+`runs/ppo-control-v6/stderr-20260914-114426.log`. These are bounded observations,
+not claims of continual liveness or improved competence. Tests **108 passed**.
+
+**Current charts http://127.0.0.1:8767/**, dashboard **PID52820**, HTTP verified to
+serve the new run and learner. Old8766 entropy and8765 damage dashboards retain
+history and show old learners dead. Independent baseline evaluator6968 continues
+on10002, last checked56/120 episodes; do not interrupt or wait for it as a gate
+to this already-live intervention. Windows commit96.67%,3.21GiB available at the
+first update; avoid adding native games or large diagnostic processes.
+
+Review after **+2,400,000 controlled native ticks**, then+4,800,000. This is roughly
+600k/1.2M new decisions, equivalent to300k/600k old eight-tick actions. Exact
+`native_frames` accounting starts at `native_frames_origin_steps=2470092`, excludes
+operational resets, and does not invent historical tick counts. Compare held-out
+boss outcomes, combat clears and health; the mixed-duration aggregate steps axis
+alone is not a fair exposure comparison. Goal remains unproven. End bounded reviews
+with PAUSE while leaving training running.
 
 User clarification: **hyperparameter tuning in general is not the default first
 intervention**. Prioritize mechanism-backed control, observation, objective, data,
@@ -18,7 +61,7 @@ successful or failed. Preserve its final checkpoint and retain entropy0.002 in t
 next run; do not combine the control change with reverting entropy. Older sections
 below are historical and do not block this specifically authorized handover.
 
-## CURRENT: lower-entropy six-worker training LIVE; authorized handover completed
+## Historical: lower-entropy six-worker training handover
 
 The user explicitly answered **"yes"** to one checkpointed stop of the existing learner and launch on the same six workers. Handover completed. **Current learner PID21432**, process creation **1789397760.954275**, session **`session-1789397765416817800`**, run **`runs/ppo-entropy-v5`**, CPU, six workers0/1/2/4/5/6, uncapped. **Never stop this learner**; the one-time approval is consumed, not an auto-restart policy.
 
