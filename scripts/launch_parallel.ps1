@@ -9,7 +9,7 @@ param(
     [ValidateSet('legacy_v1','physical_v1')][string]$TimingProfile = 'legacy_v1',
     [switch]$Resume,
     [string]$Initialize = '',
-    [ValidateSet('', 'legacy_v1', 'balanced_v2', 'confirmed_v3')][string]$RewardProfile = '',
+    [ValidateSet('', 'legacy_v1', 'balanced_v2', 'confirmed_v3', 'completion_v4')][string]$RewardProfile = '',
     [ValidateSet('', 'legacy_v1', 'terrain_v2')][string]$ObservationProfile = '',
     [switch]$NoMonitor,
     [ValidateRange(1024,65535)][int]$DashboardPort = 8765

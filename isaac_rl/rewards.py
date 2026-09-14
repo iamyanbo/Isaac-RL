@@ -31,6 +31,11 @@ PROFILES = {
         combat_clear_only=True,cell_resets_idle=False),
 }
 PROFILES["confirmed_v3"] = replace(PROFILES["balanced_v2"],damage_signal="hp_delta_v1")
+# Ablate positive within-combat proxies as one mechanism: hits and kills no
+# longer pay independently of finishing the room. Keep completion, health,
+# exploration and timing terms identical. This is NOT a potential-based reward
+# or a claim that all remaining shaping preserves the boss-win objective.
+PROFILES["completion_v4"] = replace(PROFILES["confirmed_v3"],damage=0.0,kill=0.0)
 
 
 def profile_manifest(name, control=None):

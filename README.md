@@ -6,6 +6,15 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
+### Next training change — implemented, handover pending
+
+`completion_v4` removes damage/kill bonuses, retaining combat-room and boss-clear
+rewards and all other settings. Baseline3,419,340 is preserved byte-for-byte;
+the current six-worker `ppo-control-v6` learner remains running and unchanged.
+The next run `ppo-completion-v7` has **not** launched: it needs one-time checkpointed
+handover approval. No new evaluation is a prerequisite. See
+[the completion-reward experiment](EXPERIMENT-COMPLETION-20260914.md).
+
 ### Current training — four-tick control, September 14
 
 **Live: `runs/ppo-control-v6`, six workers, CPU, four native ticks/action (133 ms).**

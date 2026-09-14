@@ -1,5 +1,49 @@
 # Current handoff — 2026-09-14
 
+## CURRENT: training reward change implemented; one-time handover approval pending
+
+Latest user direction: **"Next turn is a training change, not another evaluation."**
+This supersedes the older next-review/evaluation-first recommendations below.
+Do not launch another evaluator or wait for the current evaluator as a prerequisite.
+The previous completed goal turn was PROGRESS (completed comparison review/new
+evaluation launch); the later acknowledgement alone made no progress. This turn
+implements a concrete training mechanism change, not another diagnosis-only review.
+
+**Sole factor: confirmed_v3 → completion_v4**, eliminating damage and kill payments
+while retaining room-clear10, boss100 and all other reward/control/learning settings.
+Damage/kills remain logged and reset idle exactly as before. No changes to observation,
+architecture, native bridge, optimizer, entropy, four-tick timing or six-worker count.
+See `EXPERIMENT-COMPLETION-20260914.md` for evidence, risks, launch and verification.
+
+Frozen parent **3,419,340 steps / 4,116 updates / 3,795,560 controlled native ticks**:
+`runs/completion-intervention-20260914/baseline.pt`, SHA256
+**e1498fbcade44ff8f562220735ff4a94bc933534bd9fed6c98ad3a120c76e0b9**.
+Model tensors finite; original Adam/RNG retained. Config/observed status/experiment
+manifest alongside. Target **runs/ppo-completion-v7 has NOT launched**.
+
+Verification: **113 tests passed**; five new tests cover reward isolation and real
+PPO fork/resume on fake bridges for single/six-worker trainers. Initial model,
+Adam and RNG exactly preserved; updated weights finite and changed; profile
+inheritance and in-place reward-change rejection verified. PowerShell parsing,
+CLI choices, baseline digest, manifest/constants and diff checks passed. Only
+env.py (error message) and rewards.py (new profile) differ from the live learner's
+recorded Python/native source hashes. No native behavior benefit is claimed.
+
+**Preserve live learner20984**, creation1789400666.5494964, six-worker
+`runs/ppo-control-v6`; identity verified this turn at3,427,932 with fresh heartbeat,
+all six established sockets owned20984, empty stderr, ~3.98GiB commit headroom.
+Existing evaluator10544 identity also verified live,14/120 complete. Source edits are
+not hot-applied to its imported modules. Never-stop rule still applies: ask for
+fresh **one checkpointed handover** before signalling it. Earlier one-time approvals
+were consumed; do not add duplicate games or steal their ports. No stop.request or
+signal issued. Current charts remain127.0.0.1:8767; next run plans8768 only after
+authorized handover. Existing evaluator10544/10002 remains untouched; no new job.
+
+Training prefix through3,420,864:1,387 treatment episodes,0 wins,32 boss encounters,
+980 deaths407 idle. Old completed stochastic traces had47 positive-reward health-loss
+transitions;43 become nonpositive when subtracting damage/kill payments. This supports testing
+the reward mechanism, not claiming a proven unique bottleneck or improvement.
+
 ## CURRENT REVIEW: 18:00 Toronto; training unchanged, current-checkpoint evaluation live
 
 Previous goal turn classified PROGRESS (four-tick implementation/verified launch).

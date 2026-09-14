@@ -36,7 +36,7 @@ class IsaacEnv(gym.Env):
         options = options or {}
         self.state = self.bridge.request("reset", seed=options.get("game_seed"))
         if self.reward_config.damage_signal == "hp_delta_v1" and self.state.get("damage_signal") != "hp_delta_v1":
-            raise BridgeError("confirmed_v3 requires a bridge with resolved HP-delta damage accounting")
+            raise BridgeError(f"{self.reward_profile} requires a bridge with resolved HP-delta damage accounting")
         if options.get("game_seed") and self.state["seed"].replace(" ","") != options["game_seed"].replace(" ",""):
             raise BridgeError("Game ignored the requested seed; launch WITHOUT --set-stage")
         if self.state["stage"] != 1 or self.state["character"] != 0 or self.state["difficulty"] != 0:
