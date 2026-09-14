@@ -1,0 +1,175 @@
+
+# Notes for Isaac RL — Day 3
+
+## Day 3 notes
+
+1. **Third intervention: forced single-change adaptation.** Agent was told to
+   stop diagnosing, pick one fix, implement, launch. It chose entropy
+   coefficient 0.02 → 0.002, the safest option in its own list, not the
+   highest-value one. Self-classified the change as "optimization," which
+   is the surface where its uncertainty is lowest, not where the evidence
+   points. Entropy is high (~4.7/5.19) but that's a symptom of weak
+   advantage signal. Lowering the coefficient doesn't strengthen the
+   signal; it just lets the policy commit to noise.
+
+2. **Hedging pattern, third instance.** Day 1: iterates too fast on
+   architecture. Day 2: proposed four simultaneous changes when asked to
+   diagnose. Day 3: picked the lowest-risk single change when asked to
+   pick one. Each time, the agent finds the move with the smallest blast
+   radius. It defaults to hill-climbing the surface it's already on
+   rather than questioning whether that surface is the right one.
+
+3. **First clean reasoning from premise to fix.** Given a mechanism-based
+   steer: 30 Hz tick, 8-frame hold, 267ms decision interval, the agent
+   verified the premise against traces, then chose frame hold 8→4. It
+   caught a confound that would have corrupted the experiment: changing
+   `--frames` alone also halves the physical discount horizon, halves
+   episode/idle limits in simulated time, and doubles the per-decision
+   time penalty. It specified exact conversions (gamma 0.995→0.997497,
+   episode limit 3375→6750, idle 450→900, half the time cost).
+
+   It also corrected three prior claims:
+   - The human-reaction comparison isn't decisive. A policy can predict a
+     visible projectile and pre-act; the real limit is being unable to
+     revise mid-hold when something changes.
+   - The observation already contains continuous relative positions,
+     velocities, and sizes for nearest 16 enemies and 16 projectiles,
+     sorted by distance. Grid resolution isn't the bottleneck.
+   - LSTM+PPO failure reports are implementation bugs (broken sequence
+     ordering, incorrect hidden states), not inherent to recurrent PPO.
+
+   First turn where the response was unambiguously better than the human
+   framing that prompted it.
+
+4. **Four-tick intervention ran ~1M steps. Did not fix the plateau.**
+   Results at 3.42M aggregate steps / 1,387 treatment episodes:
+
+   | | Parent (8-tick) | Treatment (4-tick) |
+   |---|---:|---:|
+   | Combat clears/episode | 0.437 | 0.545 |
+   | Mean episode (sim seconds) | 68.93 | 92.22 |
+   | Combat clears/simulated minute | 0.381 | **0.355** |
+   | Idle endings | 17.09% | **30.17%** |
+
+   The per-episode improvement disappears when normalized by simulated
+   time. Clears per minute went *down*. Episodes got longer. Idle endings
+   nearly doubled. The agent's own audit said "better gameplay is not
+   established" and refused to call the clears-per-episode increase an
+   improvement, which is the correct read.
+
+5. **Retreat to measurement after a null result.** After the four-tick
+   run showed no improvement, the agent's response was to launch another
+   evaluation: a frozen-checkpoint learned-vs-random comparison at
+   4-tick, rather than choosing the next training change. This is the
+   fifth consecutive turn without a training change (Day 2 ended on a
+   diagnostic, Day 3 opened on a diagnostic, then entropy, then frame
+   hold, then another diagnostic). The audit itself was strong. The
+   pattern is: measure well, act reluctantly. Same hesitation as notes
+   1–2 in a different surface.
+
+6. **Fourth intervention: reward ablation, self-directed after a firm
+   steer.** Human steered: "next turn is a training change, not another
+   evaluation." Agent chose `confirmed_v3` → `completion_v4`: remove
+   damage and kill payments, keep room-clear (+10), boss clear (+100),
+   and everything else.
+
+   Evidence: 47 positive-reward health-loss transitions in the old data,
+   43 of which become net-negative under the ablation. Single variable,
+   instrumented, with an explicit falsification condition ("a collapse in
+   combat completion without improved survival would count against the
+   hypothesis").
+
+   This is the first self-picked change that wasn't the safest option.
+   It's evidence-based, targeted at a confirmed problem, and doesn't hedge
+   into a bundle.
+
+   Limitation not addressed: 30% of episodes end idle. That's the largest
+   failure bucket and no reward shaping touches it.
+
+## Human interventions log — Day 3
+
+**001 — Force a single-change adaptation** (~2.4M steps)
+Trigger: Two diagnostics produced no training change. A third was queued.
+Agent kept proposing measurement instead of modification.
+
+Intervention:
+
+"The agent has trained for ~2.4M steps with zero verified boss wins.
+Gameplay shows movement without effective dodging, weak aiming,
+facetanking, and no long-term planning.
+
+Stop doing diagnosis-only work. Treat this as enough evidence to adapt
+the agent. Review the code, choose the highest-value fix yourself,
+implement it, preserve the current checkpoint as a baseline, and launch
+the next training run."
+
+Result: Agent chose entropy coefficient 0.02 → 0.002. Implemented as a
+single-variable change with tests. Prepared `ppo-entropy-v5` initialized
+from the preserved baseline. Declined to launch pending handover
+authorization.
+
+Note: Defensible as a controlled experiment, but not the highest-value
+fix. Entropy reduction doesn't address the mechanism behind the plateau.
+
+**002 — Mechanism-based steer** (~2.4M steps)
+Trigger: Entropy change was lackluster. Agent had hedged three times.
+Human provided a mechanism with numbers instead of an observation or a
+directive.
+
+Intervention:
+
+"Here is a mechanism, not a symptom. Isaac simulates at 30 Hz. At the
+current 8-frame action hold, the policy makes one decision every 267 ms.
+Human visual reaction time is roughly 200–250 ms. The policy is deciding
+slower than a human can react, which means it cannot physically dodge
+projectiles that cross the room in under a second.
+
+If this is correct, the facetanking behavior is not a reward failure, a
+memory failure, or an LSTM-shaped problem. It is an action-space
+resolution problem.
+
+Verify the tick rate and the decision interval yourself, then choose and
+implement the fix that follows from that mechanism. One change. Preserve
+the checkpoint. Launch."
+
+Also included:
+
+"The entropy change (hyperparameters) was a hill climb that you defaulted
+to. For future notice, this should not be at the top of the priority
+list."
+
+Result: Agent verified the mechanism against native traces, chose frame
+hold 8→4, caught the confound about gamma, episode/idle limits, and time
+cost. Also corrected three prior human claims (reaction-time comparison,
+observation completeness, LSTM+PPO failure mode). Response the project
+was designed to test for.
+
+Note: Directional finding. The agent reasons well from a specific
+mechanism to a fix, and poorly from open-ended requests to prioritize.
+Day 1's "poor sense of training time" and Day 2's "collects evidence,
+doesn't act on it" are the same underlying pattern: when the framing is
+loose, the agent defaults to safety; when the framing is tight, it
+commits. The question for the thread is whether that's a limitation of
+the model or a limitation of the prompt.
+
+**003 — Block the measurement retreat** (~3.42M steps)
+Trigger: Four-tick intervention ran ~1M steps with no improvement to
+clears-per-simulated-minute. Agent's response was to launch another
+120-case learned-vs-random evaluation rather than choose the next
+training change. Fifth consecutive turn without modifying training.
+
+Intervention:
+
+"Next turn is a training change, not another evaluation"
+
+Result: Agent implemented `completion_v4`: remove damage and kill
+payments, keep room-clear and boss rewards. Single variable, evidence-
+based, instrumented with a falsification condition. Baseline at
+3,419,340 steps preserved byte-for-byte. 113 tests passed. Awaiting
+handover authorization.
+
+Note: First self-picked change that wasn't the safest option. The "pick
+now, launch when workers are free" constraint removed the diagnostic
+escape hatch and forced a decision. The reward change is defensible but
+doesn't touch the 30% idle-ending failure mode, which is the largest
+single bucket.
