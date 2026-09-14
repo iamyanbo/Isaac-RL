@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from isaac_rl.behavior_eval import (BehaviorSummary, intervention, native_seed, paired_results,
-                                   run_case, transition_metrics)
+                                   run_case, summary, transition_metrics)
 
 
 def scene(room=1, enemies=1, x=100, y=200):
@@ -102,3 +102,46 @@ def test_native_seed_formatting_preserves_canonical_identity():
         assert canonical_seed(native_seed(seed)) == canonical_seed(seed)
     with pytest.raises(ValueError):
         native_seed('INVALID')
+
+
+def test_summary_requires_complete_unique_seed_repetition_arm_coverage():
+    arms = ['stochastic', 'uniform_random']
+    rows = [dict(seed=seed, repetition=repeat, arm=arm, success=False,
+                 boss_seen=False, reason='death', r=0)
+            for seed in ['ABCDEFGH', '12345678'] for repeat in range(3) for arm in arms]
+    assert summary(rows, 2, arms, 3)['complete']
+    assert not summary(rows[:-1]+[rows[0]], 2, arms, 3)['complete']
+    assert not summary(rows[:-1], 2, arms, 3)['complete']
+    assert summary(rows, 2, arms, 3)['requested_episodes'] == 12
+    assert not summary(rows, 2, arms, 3)['checkpoint_consistency_proven']
+
+
+def test_uniform_control_ignores_trained_logits_and_keeps_all_action_heads():
+    class Model:
+        def __call__(self, obs):
+            return torch.arange(18, dtype=torch.float32).reshape(1, 18)*100, torch.zeros(1)
+
+    class Env:
+        def reset(self, options):
+            self.state = scene(enemies=1)
+            self.state.update(sequence=1, stage=1)
+            self.steps = 0
+            return {'grid':np.zeros((1, 1, 1)), 'vector':np.zeros(1)}, {}
+
+        def step(self, action):
+            self.steps += 1
+            self.state = deepcopy(self.state)
+            self.state['sequence'] += 1
+            return {}, 0, True, False, dict(reward_components={}, episode=dict(
+                success=False, r=0, l=1, boss_seen=False, reason='death'))
+
+    stream = io.StringIO()
+    result = run_case(Env(), Model(), 'uniform_random', 'ABCDEFGH', 42, 0,
+                      stream, lambda **kw:None, repetition=2)
+    record = json.loads(stream.getvalue())
+    for probability, size in zip(record['probabilities'], [9, 5, 4]):
+        np.testing.assert_allclose(probability, np.full(size, 1/size))
+    np.testing.assert_allclose(record['entropy'], np.log([9, 5, 4]), rtol=1e-6)
+    assert record['executed'] == record['proposed']
+    assert record['probability_source'] == 'uniform_random'
+    assert result['repetition'] == record['repetition'] == 2

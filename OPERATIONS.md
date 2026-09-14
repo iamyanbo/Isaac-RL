@@ -1,4 +1,20 @@
-# Current handoff — 2026-09-13
+# Current handoff — 2026-09-14
+
+## CURRENT: completed behavior audit; repeated random-control comparison live
+
+Previous goal turn classified **VERIFIED WAIT**: exact learner/evaluator process identities were confirmed live and counters advanced. This turn is **PROGRESS**: analyzed the naturally completed 60-episode diagnostic, reproduced every episode behavior summary from transitions, recorded exact evidence hashes/training-log byte prefixes, added repeatable offline analysis and uniform-random controls, and launched the next diagnostic without touching live training.
+
+See **`AUDIT-20260914.md`** and **`runs/review-20260914.json`**. Through recorded 2,374,002 episode steps: 4,665 corrected-window episodes, zero wins, 80 boss encounters. Last partial bucket (2M onward): 0.439 combat clears/episode, 2.15% boss reach. Last 100 PPO updates average 0.285s versus 37.01s collection. Source hashes recorded by the learner still match; no learner settings, training mods, ports, or processes were changed.
+
+The old evaluator **39916** naturally finished **60/60**, exit code0, and its exact identity is now dead. Frozen1.630M stochastic:0/20 wins,1 boss,19 deaths/1 idle,8.85% stationary same-room combat transitions,17.7% move-zero combat actions. Deterministic:0 wins,15 idle,56.3% stationary combat. Only7/20 movement pairs eligible; the others first diverged in native entities despite identical reported resets. Do not promote all-arm differences to exact causal effects or claim all current stochastic behavior is passive shooting. Small selected movement subset shows no win advantage and does not prove dodging.
+
+**Active evaluator: PID6968**, process creation **1789394939.3799973**, reserved native game **47392** creation1789356107.3601575, port **10002**. Output **`runs/baseline-20260914`**; stdout/stderr alongside folder. Frozen checkpoint **2,372,664**, SHA256 **17a91da77688e2e74aedc1feea058c77b10ec94ac127d5a627c08fc49a0898bf**. Twenty unseen seeds × three repetitions × learned stochastic/uniform random =120 episodes. Same native action space/8-update holds/full-floor reset; counterbalanced arm order; no optimizer. Verified live evaluating beyond88 actions with a fresh heartbeat and empty stderr. Read status and process identity next time; this is not a perpetual liveness claim.
+
+**Trainer remains PID51580**, creation1789334361.456794, six CPU workers0/1/2/4/5/6, run`runs/ppo-damage-v4`, uncapped, advancing above2.37M. Never stop or signal it. Dashboard6604 remains at http://127.0.0.1:8765/. No game restart or extra native process was needed: the previous evaluator parked reserved game3 and released its port. Before attaching the new evaluator, port10002 was confirmed unowned; game3 identity/path were verified; ~6.1GiB Windows commit headroom and149GiB disk space were available.
+
+On next manual resume, check both exact identities and evaluator outcome. Do not restart on a stale heartbeat or observation timeout. Let120 episodes finish. Compare learned versus random combat clears using **seed-level mean differences**, not120 independent observations; report uncertainty, boss/wins, health and endings. Damage alone is not the primary competence measure. The next controlled training recommendation depends on those results; do not silently rewrite the live control. Goal remains unproven. End bounded reviews with PAUSE.
+
+Final verification this turn: **76 tests passed**; `git diff --check` passed. Learner alive at **2,379,000 steps**, evaluator alive at **3/120 completed**, next stochastic repetition advancing. All six training sockets still owned51580; evaluator alone owns10002. The first native uniform-control action was[2,4,1], with exact uniform-head entropies ln9/ln5/ln4 and eight-frame advancement. Frozen checkpoint bytes match the manifest hash. Both active stderr files are empty. Dashboard API still serves the correct run as PID6604. No conclusion is drawn from the first repeated seed. The manifest's generic movement-intervention text describes the optional no-movement arm; the active `arms` list contains only stochastic/uniform_random, and neither suppresses movement.
 
 ## CURRENT: fresh behavior diagnostic launched beside live training
 

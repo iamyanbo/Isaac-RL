@@ -15,7 +15,18 @@ The project is **not yet at the requested success criterion**. Training must dem
 py -3.10 -m isaac_rl.behavior_eval runs/ppo-damage-v4/latest.pt --output runs/new-behavior-evaluation --port 10002 --seeds 20
 ```
 
-Current detached diagnostic output: `runs/behavior-20260913-v2`, frozen at **1,630,008 steps**. Its `status.json` identifies the evaluation process and phase; `result.json` updates after each completed episode; `transitions.jsonl` and `trace.jsonl` preserve behavior evidence. Live training continues independently. The first attempt under `runs/behavior-20260913` failed before any scored episode because the native console requires a space in seeded reset commands; the runner now formats canonical seed IDs before reset, with a regression test. All evidence is preserved.
+Completed movement diagnostic: `runs/behavior-20260913-v2`, frozen at **1,630,008 steps**, all 60 episodes finished with zero wins. Only 7/20 stochastic movement-ablation pairs matched through combat entry. See [the follow-up audit](AUDIT-20260914.md); movement and damage counts are not proof of aim or dodging.
+
+Current detached diagnostic: **`runs/baseline-20260914`**, frozen at **2,372,664 steps**. It compares learned stochastic versus uniform-random actions on 20 unseen seeds with three repetitions each (120 episodes). Repetitions share a seed and are not independent statistical units. Uniform actions use the same action space and frame hold, without a heuristic controller. No production learner settings changed.
+
+```powershell
+# New runs only, after verifying that the reserved evaluation port is free:
+py -3.10 -m isaac_rl.behavior_eval runs/ppo-damage-v4/latest.pt --output runs/new-random-comparison --port 10002 --seeds 20 --repetitions 3 --arms stochastic uniform_random
+# Offline analysis of a finished diagnostic; output must not already exist:
+py -3.10 -m isaac_rl.behavior_report runs/behavior-20260913-v2 --output runs/new-review.json --training-run runs/ppo-damage-v4
+```
+
+`status.json` identifies the evaluator and phase; `result.json` updates after each completed episode; `transitions.jsonl` and `trace.jsonl` preserve behavior evidence. The offline report verifies transition-derived episode summaries, records evidence hashes, and distinguishes command, displacement, and health-event metrics. The first attempt under `runs/behavior-20260913` failed before scoring because native seeded commands require a middle space; all failed and successful evidence remains preserved.
 
 ### Local chart dashboard — September 13
 

@@ -1,8 +1,9 @@
 """Frozen, paired gameplay diagnostics on a reserved native worker.
 
-Three arms per unseen seed: deterministic, stochastic, and the same stochastic
-policy with movement suppressed ONLY while enemies are present. No optimizer,
-demonstrations, hidden-state targeting, or training-port connections are used.
+Default: deterministic, stochastic, and combat-only movement suppression.
+Optional uniform-random controls and within-seed repetitions use the same native
+environment and action space. No optimizer, demonstrations, hidden-state
+targeting, or training-port connections are used.
 """
 import argparse
 from collections import Counter
@@ -27,6 +28,7 @@ from .storage import atomic_json, load_snapshot, source_fingerprint
 
 
 ARMS = ("deterministic", "stochastic", "stochastic_no_move_combat")
+AVAILABLE_ARMS = (*ARMS, "uniform_random")
 
 
 def native_seed(seed):
@@ -125,15 +127,16 @@ class BehaviorSummary:
 
 def paired_results(records):
     pairs = []
-    for seed in sorted({r["seed"] for r in records}):
-        arms = {r["arm"]: r for r in records if r["seed"] == seed}
+    for seed, repetition in sorted({(r["seed"], r.get("repetition", 0)) for r in records}):
+        arms = {r["arm"]: r for r in records
+                if r["seed"] == seed and r.get("repetition", 0) == repetition}
         normal, ablated = arms.get("stochastic"), arms.get("stochastic_no_move_combat")
         if normal is None or ablated is None:
             continue
         prefix_matched = (normal["prefix_hash"] == ablated["prefix_hash"] and
                           normal["prefix_steps"] == ablated["prefix_steps"])
         eligible = prefix_matched and normal["combat_reached"] and ablated["combat_reached"]
-        pairs.append(dict(seed=seed, prefix_matched=prefix_matched,
+        pairs.append(dict(seed=seed, repetition=repetition, prefix_matched=prefix_matched,
             both_reached_combat=normal["combat_reached"] and ablated["combat_reached"],
             movement_comparison_eligible=eligible,
             normal_minus_ablated={key: float(normal[key])-float(ablated[key])
@@ -141,19 +144,27 @@ def paired_results(records):
     return pairs
 
 
-def summary(records, requested_seeds):
-    return dict(complete=len(records) == requested_seeds*len(ARMS),
+def summary(records, requested_seeds, arms=ARMS, repetitions=1):
+    expected = requested_seeds*len(arms)*repetitions
+    keys = {(r["seed"], r.get("repetition", 0), r["arm"]) for r in records}
+    seeds = {r["seed"] for r in records}
+    complete = (len(records) == expected and len(seeds) == requested_seeds and
+                keys == {(seed, repeat, arm) for seed in seeds
+                         for repeat in range(repetitions) for arm in arms})
+    return dict(complete=complete,
         purpose="diagnostic_only", checkpoint_consistency_proven=False,
-        completed_episodes=len(records), requested_episodes=requested_seeds*len(ARMS),
+        completed_episodes=len(records), requested_episodes=expected,
         arms={arm: dict(episodes=len(rows), wins=sum(bool(r["success"]) for r in rows),
             boss_encounters=sum(bool(r["boss_seen"]) for r in rows),
             end_reasons=dict(Counter(r["reason"] for r in rows)),
             mean_return=sum(r["r"] for r in rows)/len(rows) if rows else None)
-            for arm in ARMS for rows in [[r for r in records if r["arm"] == arm]]},
+            for arm in arms for rows in [[r for r in records if r["arm"] == arm]]},
         pairs=paired_results(records))
 
 
-def run_case(env, model, arm, seed, rng_seed, pair, stream, report):
+def run_case(env, model, arm, seed, rng_seed, pair, stream, report, repetition=0):
+    if arm not in AVAILABLE_ARMS:
+        raise ValueError(f"Unknown behavior arm: {arm}")
     obs, _ = env.reset(options={"game_seed": native_seed(seed)})
     initial = env.state
     # Same random samples in the two stochastic arms before any intervention.
@@ -174,7 +185,8 @@ def run_case(env, model, arm, seed, rng_seed, pair, stream, report):
                 prefix.update(np.ascontiguousarray(obs[key]).tobytes())
         with torch.inference_mode():
             logits, _ = model(as_tensor(obs))
-            heads = [Categorical(logits=x) for x in logits[0].split([9, 5, 4])]
+            heads = [Categorical(logits=torch.zeros_like(x) if arm == "uniform_random" else x)
+                     for x in logits[0].split([9, 5, 4])]
             proposed = np.array([int(d.probs.argmax()) if arm == "deterministic" else int(d.sample()) for d in heads])
             probabilities = [d.probs.tolist() for d in heads]
             entropy = [float(d.entropy()) for d in heads]
@@ -183,7 +195,8 @@ def run_case(env, model, arm, seed, rng_seed, pair, stream, report):
         record = transition_metrics(before, env.state, proposed, executed, probabilities, entropy,
                                     reward, info["reward_components"])
         stats.add(record)
-        stream.write(json.dumps(dict(pair=pair, arm=arm, seed=seed, step=env.steps,
+        stream.write(json.dumps(dict(pair=pair, repetition=repetition, arm=arm, seed=seed, step=env.steps,
+            probability_source="uniform_random" if arm == "uniform_random" else "checkpoint",
             before_sequence=before["sequence"], after_sequence=env.state["sequence"],
             time=time.time(), **record), allow_nan=False)+"\n")
         if env.steps % 8 == 0:
@@ -197,7 +210,7 @@ def run_case(env, model, arm, seed, rng_seed, pair, stream, report):
                         and final["room"]["clear"] and final["room"]["enemies"] == 0
                         and final["boss_seen"] and final["boss_defeated"] and not final["player"]["dead"]):
                     raise RuntimeError("Win contradicted by native state")
-            return dict(pair=pair, arm=arm, seed=seed, rng_seed=rng_seed,
+            return dict(pair=pair, repetition=repetition, arm=arm, seed=seed, rng_seed=rng_seed,
                 prefix_hash=prefix.hexdigest(), prefix_steps=prefix_steps,
                 combat_reached=combat_reached, behavior=stats.result(), **{k:v for k,v in outcome.items() if k != "seed"})
 
@@ -208,11 +221,15 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--port", type=int, default=10002)
     parser.add_argument("--seeds", type=int, default=20)
+    parser.add_argument("--arms", nargs="+", choices=AVAILABLE_ARMS, default=list(ARMS))
+    parser.add_argument("--repetitions", type=int, default=1)
     parser.add_argument("--max-episode-steps", type=int, default=3375)
     parser.add_argument("--idle-limit", type=int, default=900)
     args = parser.parse_args()
-    if min(args.seeds, args.max_episode_steps, args.idle_limit) < 1:
+    if min(args.seeds, args.repetitions, args.max_episode_steps, args.idle_limit) < 1:
         parser.error("Counts and limits must be positive")
+    if len(set(args.arms)) != len(args.arms):
+        parser.error("Arms must be unique")
     torch.set_num_threads(2)
     saved, digest, payload = load_snapshot(args.checkpoint)
     if saved["architecture"] != 1:
@@ -229,18 +246,22 @@ def main():
     manifest = dict(purpose="diagnostic_only", checkpoint_steps=saved["steps"],
         checkpoint_sha256=digest, checkpoint_source=str(args.checkpoint.resolve()),
         frames=saved["frames"], max_episode_steps=args.max_episode_steps, idle_limit=args.idle_limit,
-        seeds_requested=args.seeds, arms=ARMS, port=args.port, observation_profile=profile,
+        seeds_requested=args.seeds, arms=args.arms, repetitions=args.repetitions,
+        port=args.port, observation_profile=profile,
         reward_profile=saved.get("reward_profile", "legacy_v1"),
         source_hashes=source_fingerprint(Path(__file__).resolve().parents[1]),
         intervention="Suppress only movement when the BEFORE observation contains enemies; other heads unchanged.",
         pairing="Same seed and action RNG seed; observation prefix hash includes combat entry. Exclude unmatched/no-combat pairs.",
-        limitations=["Single stochastic repetition per seed; paired random samples do not fix state-dependent trajectories.",
+        random_control="uniform_random samples each of the same 9/5/4 action heads uniformly, with the same action hold and no heuristic.",
+        limitations=["Seeds, not repeated episodes, are the independent comparison units; native RNG can diverge before an intervention.",
+            "Paired action RNG samples do not fix state-dependent trajectories.",
             "Damage during stationary transitions is association, not tear/source causation.",
             "No movement from spawn would confound navigation; this intervention is combat-only.",
             "No-movement counterfactual is not a learned-policy success evaluation."], started=time.time())
     atomic_json(output/"manifest.json", manifest)
     status = dict(pid=os.getpid(), process_started=psutil.Process().create_time(),
-        status="connecting", time=time.time(), completed_episodes=0, requested_episodes=args.seeds*len(ARMS))
+        status="connecting", time=time.time(), completed_episodes=0,
+        requested_episodes=args.seeds*len(args.arms)*args.repetitions)
 
     def report(**fields):
         status.update(time=time.time(), **fields)
@@ -266,18 +287,24 @@ def main():
                 forbidden.add(seed)
                 chosen.append(seed)
                 atomic_json(output/"seeds.json", chosen)
-                # Rotate order to distribute runtime drift across arms.
-                order = ARMS[pair % len(ARMS):]+ARMS[:pair % len(ARMS)]
-                for arm in order:
-                    report(status="resetting", pair=pair, arm=arm, seed=seed, episode_steps=0)
-                    result = run_case(env, model, arm, seed, 946513+pair, pair, stream, report)
-                    records.append(result)
-                    episodes.write(json.dumps(result, allow_nan=False)+"\n")
-                    atomic_json(output/f"pair-{pair:03d}-{arm}.json", dict(result=result, final=env.state))
-                    atomic_json(output/"result.json", summary(records, args.seeds))
-                    report(completed_episodes=len(records))
-                    print(json.dumps(dict(pair=pair, arm=arm, seed=seed, reason=result["reason"],
-                        combat_steps=result["behavior"]["combat_steps"], success=result["success"])), flush=True)
+                for repetition in range(args.repetitions):
+                    # Counterbalance order across seeds and repetitions.
+                    offset = (pair+repetition) % len(args.arms)
+                    order = args.arms[offset:]+args.arms[:offset]
+                    for arm in order:
+                        report(status="resetting", pair=pair, repetition=repetition, arm=arm,
+                               seed=seed, episode_steps=0, combat_steps=0)
+                        result = run_case(env, model, arm, seed, 946513+pair*args.repetitions+repetition,
+                                          pair, stream, report, repetition=repetition)
+                        records.append(result)
+                        episodes.write(json.dumps(result, allow_nan=False)+"\n")
+                        atomic_json(output/f"pair-{pair:03d}-repeat-{repetition:02d}-{arm}.json",
+                                    dict(result=result, final=env.state))
+                        atomic_json(output/"result.json", summary(records, args.seeds, args.arms, args.repetitions))
+                        report(completed_episodes=len(records))
+                        print(json.dumps(dict(pair=pair, repetition=repetition, arm=arm, seed=seed,
+                            reason=result["reason"], combat_steps=result["behavior"]["combat_steps"],
+                            success=result["success"])), flush=True)
         park_after_evaluation(env, output)
         report(status="finished", exit_code=0, ended_at=time.time())
     except Exception as error:
