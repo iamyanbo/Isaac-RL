@@ -1,5 +1,48 @@
 # Current handoff — 2026-09-14
 
+## CURRENT REVIEW: 18:00 Toronto; training unchanged, current-checkpoint evaluation live
+
+Previous goal turn classified PROGRESS (four-tick implementation/verified launch).
+This turn is PROGRESS: audited the completed older120-case comparison and launched
+a frozen current-checkpoint evaluation on the now-free reserved game. See
+`AUDIT-CONTROL-20260914.md` and
+`runs/baseline-20260914/analysis-20260914-1800.json`.
+
+**Learner20984 creation1789400666.5494964 remains LIVE**, six workers/four ticks,
+`runs/ppo-control-v6`, observed beyond3.333M aggregate steps,3.45M controlled native
+ticks. Production source hashes/settings unchanged; no learner/game stopped or
+signalled. First review threshold+2.4M ticks crossed. Recorded treatment prefix:
+1,233 episodes,0 wins,31 boss encounters;0.545 combat clears/episode versus0.437
+in short parent run, but mean episode time92.22s versus~68.93s and idle30.17% versus
+17.09%. Clears/minute0.355 versus~0.381. This is descriptive, non-paired evidence,
+not a causal improvement/regression estimate. Goal remains unproven. Last100
+updates: collection37.116s/PPO0.528s; entropy2.524 is not competence.
+
+Old evaluator6968 naturally FINISHED120/120, exit0, exact identity DEAD. Recomputed
+all120 behavior summaries from39,288 transitions. Older2.372M learned and random
+both0/60 wins and0 boss encounters. Learned damage32.43 versus16.03, but combat
+clears0.25 versus0.10 with exploratory seed-bootstrap difference interval[-0.033,
+0.350]. No robust boss or survival competence follows from the proxy improvement.
+
+**New evaluator PID10544**, creation **1789423443.6716738**, output
+**`runs/control-eval-20260914-1800`**, reserved **10002**, native **47392** unchanged.
+Frozen **3,327,180** / native ticks3,427,089, SHA256
+**7a1b5cdd49ed2abdcbbc0b3ccc2a2bf18d9bb58901a72284ed8b60bd5357e74f**.
+20 unseen seeds x3 repeats x stochastic/uniform_random =120. Four ticks,
+physical_v1, max6750/idle1800 (900s/240s evaluation budgets); no optimizer.
+Startup verified advancing beyond880 actions, fresh heartbeat, empty stderr,
+first seed absent from checkpoint training seeds, correct native four-tick deltas.
+Preflight port unowned/game identity alive,4.10GiB commit headroom. No game restart
+or extra native process. Stdout/stderr adjacent to the evaluation output folder.
+
+Next manual resume: confirm exact learner/evaluator identities and inspect this
+evaluation, not the completed older one. Let it finish; do not infer terminal state
+from observation timeout. Compare within-seed outcomes and physical time, not raw
+four-tick/eight-tick episode lengths or displacement-threshold fractions. Preserve
+the current single-mechanism training run; no hyperparameter tweaks, reward changes,
+or automatic handover authorized. Current charts remain127.0.0.1:8767. End bounded
+review with PAUSE, leaving training running.
+
 ## CURRENT: four-tick six-worker training LIVE; handover completed
 
 The user said **"make the changes"** after the verified action-hold audit. That
