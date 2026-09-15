@@ -1,4 +1,37 @@
-# Current handoff — 2026-09-14
+# Current handoff — 2026-09-15
+
+## CURRENT: September 15, 08:50 Toronto — overnight check; handover still pending
+
+Learner **20984**, creation **1789400666.5494964**, identity verified LIVE with
+0.18s heartbeat at **5,369,868 steps / 5,385 updates**, six workers, four ticks,
+confirmed_v3. No stop.request; stderr remains empty. Prepared completion_v4 run
+**has not launched**. Commit3a7a41f and its frozen3,419,340 baseline remain the
+planned intervention; do not silently replace that baseline with newer weights.
+
+Training episode prefix through **5,370,498 steps**: 4,280 control-run episodes,
+0 wins,96 boss encounters,2,011 combat clears;3,059 deaths/1,221 idle endings.
+Since the previous3,432,780-step check: **2,872 episodes,0 wins,64 boss encounters**,
+2,062 deaths/810 idle. Last500:0 wins,7 boss encounters,205 combat clears,
+347 deaths/153 idle;0.256 clears per simulated minute. These are descriptive
+training outcomes, not a causal comparison. Prefix2,410,152bytes, SHA256
+`4340a48ee45565466777bce785eedd3f265239b07f5733d60d805537280f66df`.
+Last100 updates averaged collection36.765s versus PPO0.362s; retain CPU.
+
+Existing evaluator10544 is now **FINISHED120/120, exit0, exact identity absent**.
+It reports normal unscored cleanup/parking. Episode records: stochastic0/60 wins,
+0 boss encounters,23 combat clears,35 deaths/25 idle; uniform random0/60 wins,
+0 boss encounters,9 combat clears,42 deaths/18 idle. No transition re-audit or
+statistical improvement claim was made this turn. Episodes SHA256
+`9e3bc4929606495b9b065262419f341ec352a7612d081d004a5c537a19fc45b9`.
+**No new evaluation launched**, no native game/process signalled or restarted.
+
+Next action remains the implemented reward ablation, not another diagnostic or
+hyperparameter change. Reusing the six occupied training ports requires the
+previously requested **one-time checkpointed handover approval**. A goal resume
+alone does not override the explicit never-stop rule. The prior goal turn was a
+verified live-process wait ending blocked on that approval; this resumed run
+starts a fresh blocked audit (first occurrence), not an immediate blocked update.
+The original full-floor success criterion remains unproven. Current charts8767.
 
 ## CURRENT: training reward change implemented; one-time handover approval pending
 
