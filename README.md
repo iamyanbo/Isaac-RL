@@ -21,6 +21,14 @@ launched; improved boss competence remains unproven. Do not stop this learner.
 See
 [the completion-reward experiment](EXPERIMENT-COMPLETION-20260914.md).
 
+September15 recovery: a native allocation failure at99.6% Windows commit caused
+the first session to exit; a later machine reboot removed the game processes.
+The unchanged six-worker run is now resumed as **learner31448** from its saved
+3,897,036 checkpoint, with exact model/Adam/RNG inheritance verified and real PPO
+updates completed. Current dashboard30664 uses the same8768 URL. Failure evidence
+and recovery snapshots are preserved in `runs/recovery-20260915-1747`; see
+OPERATIONS.md for current identities. No live learner was stopped during recovery.
+
 ### Historical baseline — four-tick control, September 14
 
 **Stopped after authorized handover: `runs/ppo-control-v6`.**

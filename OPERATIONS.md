@@ -1,5 +1,78 @@
 # Current handoff — 2026-09-15
 
+## CURRENT: September 15, 17:52 Toronto — recovered stopped run; six workers LIVE
+
+**Current learner31448**, creation **1789509120.8056352**, session
+**session-1789509125636090700**, continues `runs/ppo-completion-v7` unchanged:
+six workers0/1/2/4/5/6, CPU, four ticks/physical_v1, completion_v4, entropy0.002,
+original architecture/observations/optimizer/schedules. **Never stop this live
+learner.** This was recovery after a verified terminal failure and subsequent
+machine reboot, not a stop of live training or an automatic restart policy.
+
+On resume, old learner46824 was absent, status error/exit1/cleanup complete at
+**3,897,150 observed steps** with a reset receive timeout. Its final update showed
+**99.594% committed memory,0.393GiB headroom**. Worker1's native log recorded failed
+texture allocations (1–8MiB), then an exception/minidump. The traceback timed out
+inside reset_done → IsaacEnv.reset → Bridge.request. The last idle episode was
+on10000. All native games and Steam were absent after a later reboot; boot time
+1789508333.4582417. Current commit before recovery was31.50%,43.79GiB headroom.
+No restart decision was based merely on observation timeout or a stale status file.
+
+Failure evidence preserved in **runs/recovery-20260915-1747**: native logs for all
+six workers, learner stderr/stdout/status/config, complete pre-resume episode/update
+logs and a byte-identical checkpoint. Saved checkpoint **3,897,036 steps / 10,220
+historical episodes / 4,427 updates / 5,705,526 native ticks**, SHA256
+**b08dc2f3d73a66585824bee7ddf7894afbdfed51f786e93e0630fccc0e0ff94a**.
+The114 later transitions were not saved into policy/optimizer state. The two later
+episode log records are retained; new session IDs distinguish resumed counters.
+No old logs/checkpoints were deleted and the original3,419,340 baseline is unchanged.
+
+Before recovery:744 completed treatment episode records,0 wins,7 boss encounters,
+282 combat clears,530 deaths/214 idle. Episode-prefix419340bytes, SHA256
+**43e98ed50bed4c76d5156f0803a12d1036b914711a4874a01fc77739d5ee17fa**.
+Treatment exposure was about1.91M native ticks, below the planned+2.4M review point;
+no competence conclusion or second learning intervention was introduced.
+
+Started the normal Steam client, then reused existing private executables/resources
+without recopying from the original installation. Each executable matched its
+installation hash; each bridge matched the unchanged0.1.3 hash; only the bridge mod
+was enabled. Native startup logs confirmed only game base scripts and the bridge,
+normal runs, and no allocation/minidump errors. New native identities:
+0=31892/1789508991.6291175;1=9764/1789509064.0075495;
+2=31108/1789509064.6309474;4=31920/1789509065.3370583;
+5=30516/1789509066.16111;6=25992/1789509066.9162357.
+Normal menu startup completed; workers1/2/4/5/6 hidden afterward. Reserved instance3
+was not relaunched. No personal saves, original game files, pagefiles, or unrelated
+applications were changed or closed. No new evaluation launched.
+
+Resumed via launch_parallel.ps1 -Run runs/ppo-completion-v7 -Resume
+-Instances0,1,2,4,5,6 -Device cpu -Steps0 -DashboardPort8768.
+Archived **resumed-initial.pt** SHA256
+**1056b681e56bce895612412a13c954da1f131d58fde07ef32280d0c29affb788**:
+model, Adam, Torch/NumPy RNG, counters, recent/loss windows, schedules, timing,
+reward/observation profiles and source hashes exactly match the saved checkpoint.
+Only config resume path/origin provenance changed. No production code changed.
+
+First resumed PPO update **4428 / 3,898,572 steps**,1,536 transitions/6,142 native
+ticks; collection42.770351s/PPO0.536960s/wall45.966643s,33.4155 decisions/s.
+Frozen **first-observed-resumed.pt** is after the SECOND update4429 at3,900,108,
+native ticks5,717,809; SHA256
+**e13529d5e7d4b2baab999a97f669923aeef43427d5009e06339d3069f1d21039**.
+All16 model tensors changed and finite; Adam groups unchanged; source hashes match.
+Verified live beyond3,900,636, all six established sockets owned31448, all six frame
+deltas4/profiles correct, zero damage/kill payments, empty new stderr
+**runs/ppo-completion-v7/stderr-20260915-175200.log**. First update memory42.72%
+committed/36.62GiB available, later44.05%/35.77GiB. This is current headroom, not a
+claim that the underlying risk of future system-wide memory exhaustion is fixed.
+
+**Charts remain http://127.0.0.1:8768/**, new dashboard **30664**. API verified to
+serve this run and learner31448. Old dashboard46344 disappeared with the reboot.
+Next review threshold remains cumulative **6,195,560 native ticks**; do not reset
+experiment exposure to zero on session recovery or compare rewards across profiles.
+The previous completed goal turn was PROGRESS (reward handover); the interrupted
+continuation issued no actions. This turn is PROGRESS (verified recovery and actual
+optimized training). Leave detached training running; goal remains unproven; PAUSE.
+
 ## CURRENT: completion-reward six-worker training LIVE; approved handover complete
 
 The user said **"make the changes"** in response to the one-time handover question.
