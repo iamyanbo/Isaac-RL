@@ -6,6 +6,16 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
+### Prepared observability change — September 15
+
+`combat_history_v3` adds native combat fields and four snapshots with intervening
+actions. Input widening preserves the parent's initial policy and Adam state.
+Native schema smoke and migration tests pass; **the six-worker live learner has
+not switched**. Activation requires the separately requested one-time handover,
+using its final checkpoint rather than an older preparation snapshot. See the
+[observability experiment](EXPERIMENT-OBSERVABILITY-20260915.md) for the exact
+change, unchanged settings, evidence and predeclared falsification condition.
+
 ### Current training — completion rewards, September 15
 
 **Live: `runs/ppo-completion-v7`, six workers, CPU, four ticks/action.**

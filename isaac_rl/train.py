@@ -13,7 +13,7 @@ import psutil
 
 from .bridge import Bridge
 from .env import IsaacEnv
-from .ppo import ActorCritic, as_tensor, optimize, resolve_entropy_coef
+from .ppo import load_policy, as_tensor, optimize, resolve_entropy_coef
 from .observation import OBSERVATION_PROFILES, resolve_observation_profile
 from .rewards import PROFILES, profile_manifest
 from .storage import atomic_json, checkpoint, source_fingerprint
@@ -54,8 +54,6 @@ def run_training(args):
     run.mkdir(parents=True,exist_ok=True)
     if (run/"status.json").exists() and not args.resume:
         raise RuntimeError("Run already exists; use --resume or choose a new run directory")
-    model = ActorCritic().to(args.device)
-    optimizer = torch.optim.Adam(model.parameters(),lr=3e-4,eps=1e-5)
     steps,episodes,updates = 0,0,0
     recent = deque(maxlen=50)
     training_seeds = set()
@@ -63,12 +61,6 @@ def run_training(args):
     saved = None
     if args.resume:
         saved = torch.load(args.resume,map_location=args.device,weights_only=False)
-        if saved["architecture"] != 1:
-            raise RuntimeError("Checkpoint architecture differs from this run")
-        model.load_state_dict(saved["model"])
-        optimizer.load_state_dict(saved["optimizer"])
-        torch.set_rng_state(saved["torch_rng"].cpu())
-        np.random.set_state(saved["numpy_rng"])
         steps,episodes,updates = saved["steps"],saved["episodes"],saved["updates"]
         recent.extend(saved["recent"])
         training_seeds.update(saved["training_seeds"])
@@ -78,6 +70,12 @@ def run_training(args):
             if update_lines:
                 losses = {k:v for k,v in json.loads(update_lines[-1]).items() if k not in ("time","steps","updates")}
     args.observation_profile = resolve_observation_profile(args.observation_profile,saved,(run/"status.json").exists())
+    model,optimizer = load_policy(saved,args.device,args.observation_profile,with_optimizer=True)
+    if saved is not None:
+        torch.set_rng_state(saved["torch_rng"].cpu())
+        np.random.set_state(saved["numpy_rng"])
+        if args.device.startswith("cuda") and saved.get("cuda_rng"):
+            torch.cuda.set_rng_state_all([s.cpu() for s in saved["cuda_rng"]])
     parent_reward = saved.get("reward_profile","legacy_v1") if saved is not None else "legacy_v1"
     args.reward_profile = args.reward_profile or parent_reward
     if saved is not None and args.reward_profile != parent_reward:
@@ -98,7 +96,8 @@ def run_training(args):
     native_frames = (saved or {}).get("native_frames",0)
     native_frames_origin_steps = (saved or {}).get("native_frames_origin_steps",steps)
     config = {key:str(value) if isinstance(value,Path) else value for key,value in vars(args).items()}
-    config.update(architecture=1,algorithm="PPO",initialization="random" if not args.resume else str(args.resume),
+    config.update(architecture=model.observation_layout["architecture"],observation_layout=model.observation_layout,
+        algorithm="PPO",initialization="random" if not args.resume else str(args.resume),
         observations="current room entities, spatial grid, and visit memory",reward=profile_manifest(args.reward_profile,control),
         control_timing=control.manifest(),training_schedule=schedule,
         source_hashes=source_fingerprint(root))
@@ -135,7 +134,8 @@ def run_training(args):
     def save():
         checkpoint(run/"latest.pt",model,optimizer,dict(steps=steps,episodes=episodes,updates=updates,
             recent=list(recent),training_seeds=sorted(training_seeds),numpy_rng=np.random.get_state(),
-            frames=args.frames,entropy_coef=args.entropy_coef,architecture=1,source_hashes=config["source_hashes"],losses=losses,
+            frames=args.frames,entropy_coef=args.entropy_coef,architecture=config["architecture"],
+            observation_layout=model.observation_layout,source_hashes=config["source_hashes"],losses=losses,
             timing_profile=args.timing_profile,control_timing=control.manifest(),training_schedule=schedule,
             native_frames=native_frames,native_frames_origin_steps=native_frames_origin_steps,
             observation_profile=args.observation_profile,reward_profile=args.reward_profile,

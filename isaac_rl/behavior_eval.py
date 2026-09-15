@@ -23,7 +23,7 @@ from .bridge import Bridge
 from .env import IsaacEnv
 from .evaluate import canonical_seed, park_after_evaluation
 from .observation import resolve_observation_profile
-from .ppo import ActorCritic, as_tensor
+from .ppo import load_policy, as_tensor
 from .storage import atomic_json, load_snapshot, source_fingerprint
 from .timing import configure_evaluation
 
@@ -234,10 +234,7 @@ def main():
     torch.set_num_threads(2)
     saved, digest, payload = load_snapshot(args.checkpoint)
     control = configure_evaluation(args,saved)
-    if saved["architecture"] != 1:
-        raise ValueError("Unsupported architecture")
-    model = ActorCritic()
-    model.load_state_dict(saved["model"])
+    model,_ = load_policy(saved)
     if not all(bool(torch.isfinite(v).all()) for v in model.state_dict().values()):
         raise ValueError("Nonfinite checkpoint")
     model.eval()

@@ -1,0 +1,7 @@
+<metadata>
+  <name>Isaac RL Observation Fixture</name>
+  <directory>isaac_rl_observation_fixture</directory>
+  <id>isaac_rl_observation_fixture</id>
+  <description>Reserved-instance schema smoke test only. Never enable in training.</description>
+  <version>1</version>
+</metadata>

@@ -12,7 +12,7 @@ import numpy as np
 import psutil
 import torch
 
-from .ppo import ActorCritic, optimize, resolve_entropy_coef
+from .ppo import load_policy, optimize, resolve_entropy_coef
 from .observation import OBSERVATION_PROFILES, resolve_observation_profile
 from .storage import atomic_json, checkpoint, load_snapshot, source_fingerprint
 from .rewards import PROFILES, profile_manifest
@@ -62,22 +62,12 @@ def run_training(args):
     run.mkdir(parents=True,exist_ok=True)
     if (run/"status.json").exists() and not args.resume:
         raise RuntimeError("Run already exists; resume its checkpoint or choose a new directory")
-    model = ActorCritic().to(args.device)
-    optimizer = torch.optim.Adam(model.parameters(),lr=3e-4,eps=1e-5)
     steps,episodes,updates = 0,0,0
     recent,seeds,losses = deque(maxlen=50),set(),{}
     origin = {"initialization":"random","seed":args.seed}
     saved = None
     if args.resume:
         saved,parent_digest,_ = load_snapshot(args.resume,args.device)
-        if saved["architecture"] != 1:
-            raise RuntimeError("Checkpoint architecture differs")
-        model.load_state_dict(saved["model"])
-        optimizer.load_state_dict(saved["optimizer"])
-        torch.set_rng_state(saved["torch_rng"].cpu())
-        np.random.set_state(saved["numpy_rng"])
-        if args.device.startswith("cuda") and saved.get("cuda_rng"):
-            torch.cuda.set_rng_state_all([s.cpu() for s in saved["cuda_rng"]])
         steps,episodes,updates = saved["steps"],saved["episodes"],saved["updates"]
         recent.extend(saved["recent"])
         seeds.update(saved["training_seeds"])
@@ -96,6 +86,12 @@ def run_training(args):
                   "parent_observation_profile":saved.get("observation_profile","legacy_v1"),
                   "parent_steps":steps,"initialization":"continued from project-trained PPO"}
     args.observation_profile = resolve_observation_profile(args.observation_profile,saved,(run/"status.json").exists())
+    model,optimizer = load_policy(saved,args.device,args.observation_profile,with_optimizer=True)
+    if saved is not None:
+        torch.set_rng_state(saved["torch_rng"].cpu())
+        np.random.set_state(saved["numpy_rng"])
+        if args.device.startswith("cuda") and saved.get("cuda_rng"):
+            torch.cuda.set_rng_state_all([s.cpu() for s in saved["cuda_rng"]])
     if saved is not None and args.observation_profile != saved.get("observation_profile","legacy_v1"):
         recent.clear()
         losses = {}
@@ -111,7 +107,8 @@ def run_training(args):
     origin.update(parent_frames=saved.get("frames") if saved else None,
                   parent_timing_profile=saved.get("timing_profile","legacy_v1") if saved else None)
     config = {key:str(value) if isinstance(value,Path) else value for key,value in vars(args).items()}
-    config.update(architecture=1,algorithm="PPO",mode="full_floor",origin=origin,
+    config.update(architecture=model.observation_layout["architecture"],observation_layout=model.observation_layout,
+        algorithm="PPO",mode="full_floor",origin=origin,
         reward=profile_manifest(args.reward_profile,control),control_timing=control.manifest(),
         training_schedule=schedule,source_hashes=source_fingerprint(root))
     session_name = f"session-{time.time_ns()}"
@@ -151,7 +148,8 @@ def run_training(args):
         checkpoint(path or run/"latest.pt",model,optimizer,dict(steps=steps,episodes=episodes,updates=updates,
             recent=list(recent),training_seeds=sorted(seeds),numpy_rng=np.random.get_state(),
             cuda_rng=torch.cuda.get_rng_state_all() if args.device.startswith("cuda") else None,
-            frames=args.frames,entropy_coef=args.entropy_coef,architecture=1,source_hashes=config["source_hashes"],origin=origin,
+            frames=args.frames,entropy_coef=args.entropy_coef,architecture=config["architecture"],
+            observation_layout=model.observation_layout,source_hashes=config["source_hashes"],origin=origin,
             timing_profile=args.timing_profile,control_timing=control.manifest(),training_schedule=schedule,
             native_frames=native_frames,native_frames_origin_steps=native_frames_origin_steps,
             ports=args.ports,losses=losses,reward_profile=args.reward_profile,

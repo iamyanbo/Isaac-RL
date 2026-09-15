@@ -62,10 +62,68 @@ local function arrayPosition(entity)
     return {entity.Position.X, entity.Position.Y, entity.Velocity.X, entity.Velocity.Y}
 end
 
+-- Sidecar leaves the legacy 12-column entity wire format intact. These are
+-- current native properties, never future states or recommended controls.
+local function combatEntity(e, kind)
+    local result = {id=e.InitSeed, size_multi={e.SizeMulti.X,e.SizeMulti.Y},
+        collision=e.EntityCollisionClass, collision_damage=e.CollisionDamage}
+    if kind == 1 then
+        local npc = e:ToNPC()
+        result.npc_state, result.state_frame = npc.State, npc.StateFrame
+        result.animation_frame = e:GetSprite():GetFrame()
+    elseif kind == 2 then
+        local projectile = e:ToProjectile()
+        result.height, result.falling_speed, result.falling_accel =
+            projectile.Height, projectile.FallingSpeed, projectile.FallingAccel
+    elseif kind == 4 then
+        result.countdown = e:ToBomb().ExplosionCountdown
+    elseif kind == 7 then
+        local laser = e:ToLaser()
+        result.circle, result.sample = laser:IsCircleLaser(), laser:IsSampleLaser()
+        -- Native GetSamples() is NOT meaningful for circles (verified NaNs),
+        -- and may be empty for straight lasers. Use each shape's own geometry.
+        local endpoint = result.circle and e.Position or laser:GetEndPoint()
+        result.endpoint = {endpoint.X,endpoint.Y}
+        result.angle = result.circle and 0 or laser.AngleDegrees
+        result.radius = result.circle and laser.Radius or 0
+        result.timeout, result.samples = laser.Timeout, {}
+        result.sample_count, result.geometry_valid = 0, true
+        if not result.circle and result.sample then
+            local samples = laser:GetSamples()
+            result.sample_count = #samples
+            -- Include both ends; bounded polyline, original count for audits.
+            local count = math.min(8,#samples)
+            result.geometry_valid = count >= 2
+            for i=0,count-1 do
+                local index = count == 1 and 0 or math.floor(i*(#samples-1)/(count-1))
+                local point = samples:Get(index)
+                result.samples[#result.samples+1] = {point.X,point.Y}
+            end
+        elseif not result.circle then
+            result.samples = {{e.Position.X,e.Position.Y},result.endpoint}
+            result.sample_count = 2
+        end
+        local function finite(value) return value == value and math.abs(value) < math.huge end
+        for _, value in ipairs({result.angle,result.radius,endpoint.X,endpoint.Y}) do
+            if not finite(value) then result.geometry_valid=false end
+        end
+        for _, point in ipairs(result.samples) do
+            if not finite(point[1]) or not finite(point[2]) then result.geometry_valid=false end
+        end
+        if not result.geometry_valid then
+            -- Explicit missing-geometry mask, never emit invalid JSON or claim
+            -- that an uninitialized native curve is a valid zero-length beam.
+            result.endpoint, result.angle, result.radius = {0,0},0,0
+            result.samples = {}
+        end
+    end
+    return result
+end
+
 local function snapshot()
     local player, room, level = Isaac.GetPlayer(0), game:GetRoom(), game:GetLevel()
     local roomId = level:GetCurrentRoomIndex()
-    local entities, doors, grid = {}, {}, {}
+    local entities, doors, grid, combat = {}, {}, {}, {}
     local enemies = 0
     for _, e in ipairs(Isaac.GetRoomEntities()) do
         local kind = nil
@@ -85,6 +143,7 @@ local function snapshot()
             p[5],p[6],p[7],p[8] = kind,e.Type,e.Variant,e.SubType
             p[9],p[10],p[11],p[12] = e.HitPoints,e.MaxHitPoints,e.Size,e.InitSeed
             entities[#entities+1] = p
+            combat[#combat+1] = combatEntity(e,kind)
         end
     end
     local isClear = room:IsClear()
@@ -125,10 +184,16 @@ local function snapshot()
         room={id=roomId,type=room:GetType(),clear=isClear,enemies=enemies,
             bounds={tl.X,tl.Y,br.X,br.Y},visits=visits[tostring(roomId)] or 0},
         entities=entities,doors=doors,grid=grid,
+        combat_schema="combat_v1",combat_entities=combat,
+        combat_player={size=player.Size,size_multi={player.SizeMulti.X,player.SizeMulti.Y},
+            fire_cooldown=player.FireDelay,damage_cooldown_render_frames=player:GetDamageCooldown(),
+            invincible=player:HasInvincibility() or player:GetDamageCooldown()>0,
+            invincibility_effect=player:HasInvincibility(),can_shoot=player:CanShoot(),can_fly=player.CanFly,
+            collision=player.EntityCollisionClass},
         events={damage_taken=damageTaken,damage_dealt=damageDealt,damage_attempted=damageAttempted,kills=kills},
         visited=visits,cleared=cleared,boss_seen=bossSeen,boss_defeated=bossDefeated,
         success=bossDefeated,terminal=player:IsDead() or bossDefeated,
-        mode="full_floor",bridge_version="0.1.3",bridge_port=PORT,damage_signal="hp_delta_v1"
+        mode="full_floor",bridge_version="0.1.4",bridge_port=PORT,damage_signal="hp_delta_v1"
     }
 end
 

@@ -1,12 +1,13 @@
 """Clipped PPO with GAE, time-limit bootstrapping, and factored actions."""
 import math
+from copy import deepcopy
 
 import numpy as np
 import torch
 from torch import nn
 from torch.distributions import Categorical
 
-from .observation import CHANNELS, VECTOR_SIZE
+from .observation import observation_manifest, resolve_observation_profile
 from .rewards import GAMMA
 
 
@@ -27,14 +28,15 @@ def resolve_entropy_coef(requested=None, checkpoint=None, existing_run=False):
 
 
 class ActorCritic(nn.Module):
-    def __init__(self):
+    def __init__(self, observation_profile="terrain_v2"):
         super().__init__()
+        self.observation_layout = observation_manifest(observation_profile)
         self.spatial = nn.Sequential(
-            nn.Conv2d(CHANNELS,16,3,padding=1,stride=2),nn.ReLU(),
+            nn.Conv2d(self.observation_layout["channels"],16,3,padding=1,stride=2),nn.ReLU(),
             nn.Conv2d(16,32,3,padding=1,stride=2),nn.ReLU(),nn.Flatten(),
             nn.Linear(32*4*7,128),nn.Tanh(),
         )
-        self.features = nn.Sequential(nn.Linear(VECTOR_SIZE,256),nn.Tanh())
+        self.features = nn.Sequential(nn.Linear(self.observation_layout["vector_size"],256),nn.Tanh())
         self.shared = nn.Sequential(nn.Linear(384,256),nn.Tanh(),nn.Linear(256,256),nn.Tanh())
         self.actor = nn.Linear(256,18)
         self.critic = nn.Linear(256,1)
@@ -57,6 +59,55 @@ class ActorCritic(nn.Module):
         log_prob = torch.stack([d.log_prob(actions[:,i]) for i,d in enumerate(distributions)],dim=-1).sum(-1)
         entropy = torch.stack([d.entropy() for d in distributions],dim=-1).sum(-1)
         return actions,log_prob,entropy,values
+
+
+def load_policy(saved=None, device="cpu", observation_profile=None, with_optimizer=False):
+    """Load exact architecture, or explicitly widen terrain_v2 inputs on a fork.
+
+    Widened input weights AND Adam moments are zero outside the original current
+    snapshot prefix. Hidden layers, action heads, moments and step counts carry
+    over. No random policy restart or optimizer reset is hidden in migration.
+    """
+    profile = resolve_observation_profile(observation_profile,saved)
+    parent = resolve_observation_profile(checkpoint=saved) if saved is not None else profile
+    if saved is not None and saved["architecture"] != observation_manifest(parent)["architecture"]:
+        raise ValueError("Checkpoint architecture/observation profile mismatch")
+    if saved is not None and saved["architecture"] == 2 and saved.get("observation_layout") != observation_manifest(parent):
+        raise ValueError("Checkpoint observation layout differs from this schema")
+    widening = parent == "terrain_v2" and profile == "combat_history_v3"
+    if saved is not None and observation_manifest(parent)["architecture"] != observation_manifest(profile)["architecture"] and not widening:
+        raise ValueError("Unsupported observation architecture migration")
+    model = ActorCritic(profile).to(device)
+    optimizer = torch.optim.Adam(model.parameters(),lr=3e-4,eps=1e-5) if with_optimizer else None
+    if saved is None:
+        return model,optimizer
+    weights = saved["model"]
+    widened_names = ("spatial.0.weight","features.0.weight")
+    def expand(tensor, target):
+        if tensor.shape == target.shape:
+            return tensor.clone()
+        if tensor.ndim != target.ndim or tensor.shape[0] != target.shape[0] or tensor.shape[2:] != target.shape[2:] or tensor.shape[1] >= target.shape[1]:
+            raise ValueError("Unexpected input expansion shape")
+        result = tensor.new_zeros(target.shape)
+        result[:,:tensor.shape[1]] = tensor
+        return result
+    if widening:
+        weights = {name:expand(value,model.state_dict()[name]) if name in widened_names else value for name,value in weights.items()}
+    model.load_state_dict(weights)
+    if optimizer is not None:
+        state = deepcopy(saved["optimizer"])
+        if widening:
+            identifiers = [i for group in state["param_groups"] for i in group["params"]]
+            named = list(model.named_parameters())
+            if len(identifiers) != len(named):
+                raise ValueError("Unexpected optimizer parameter ordering")
+            for identity,(name,param) in zip(identifiers,named):
+                if name in widened_names:
+                    for key,value in state["state"].get(identity,{}).items():
+                        if torch.is_tensor(value) and value.ndim > 0:
+                            state["state"][identity][key] = expand(value,param)
+        optimizer.load_state_dict(state)
+    return model,optimizer
 
 
 def as_tensor(obs, device="cpu"):

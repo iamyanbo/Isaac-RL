@@ -3,5 +3,5 @@
   <directory>isaac_rl_bridge</directory>
   <id>isaac_rl_bridge</id>
   <description>Local synchronous state and input bridge for reinforcement learning.</description>
-  <version>0.1.3</version>
+  <version>0.1.4</version>
 </metadata>

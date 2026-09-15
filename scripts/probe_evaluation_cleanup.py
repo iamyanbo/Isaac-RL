@@ -11,7 +11,7 @@ from isaac_rl.bridge import Bridge
 from isaac_rl.env import IsaacEnv
 from isaac_rl.evaluate import park_after_evaluation
 from isaac_rl.observation import resolve_observation_profile
-from isaac_rl.ppo import ActorCritic, as_tensor
+from isaac_rl.ppo import load_policy, as_tensor
 from isaac_rl.storage import atomic_json, load_snapshot
 
 
@@ -26,8 +26,7 @@ def main():
     args = parser.parse_args()
     torch.set_num_threads(2)
     saved,digest,_ = load_snapshot(args.checkpoint,"cpu")
-    model = ActorCritic()
-    model.load_state_dict(saved["model"])
+    model,_ = load_policy(saved)
     model.eval()
     output = args.output or Path("runs")/f"evaluation-cleanup-probe-{time.time_ns()}"
     output.mkdir(parents=True,exist_ok=False)

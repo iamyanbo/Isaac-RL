@@ -1,5 +1,63 @@
 # Current handoff — 2026-09-15
 
+## CURRENT: September 15, 18:38 Toronto — observability prepared; old six-worker run STILL LIVE
+
+Learner **31448 / creation1789509120.8056352**, session
+**session-1789509125636090700**, is still training `runs/ppo-completion-v7`
+with the same six native workers and its already-loaded original code/bridge.
+Last check **4,001,532 observed decisions / 4,495 updates**, saved4,001,484;
+heartbeat0.92s, all six established sockets owned31448, empty stderr, no
+stop.request. Commit49.92%,32.01GiB headroom. Charts remain8768/dashboard30664.
+**No live learner/native training worker was stopped, reconnected or reconfigured.**
+
+Latest requested intervention is implemented as `combat_history_v3`: enriched
+native combat state plus four snapshots/three intervening actions. See
+EXPERIMENT-OBSERVABILITY-20260915.md for mechanism, exact unchanged settings,
+limits and explicit falsification at+1.2M decisions on100 held-out full-floor
+seeds. No GRU/LSTM, reward change, control change or optimizer tuning. New input
+weights/moments zero-pad the existing policy. Architecture2 records input-width
+growth; new schema must not be hot-swapped into architecture1 training.
+
+**A one-time checkpointed handover was requested through the user-input tool;
+no answer has been received and no handover occurred.** Preserve this learner
+until that approval. If approved, capture its FINAL current checkpoint as
+parent-final.pt, hash it, and fork that checkpoint. Do not roll back to the
+preparation baseline simply because it is already archived. No automatic restart
+policy is authorized. Update/restart only the six private games after their
+learner is cleanly stopped; confirm schema and process identities first.
+
+Preparation artifacts: `runs/observability-intervention-20260915`.
+Byte-identical then-current baseline **3,970,764 steps / 4,475 updates /
+6,000,323 native ticks**, SHA256
+**a413289a52b31b6e71ef6a761e1da6e7d6575b7eb23f8e9bb338d4c05c337af5**;
+source archive from40266ae. Existing5,377,722 checkpoint and all prior baselines
+remain intact. `manifest.json` records constants and falsification threshold.
+
+Verification: **140 tests passed**, including actual Lua export and real
+single/six-environment PPO fork/resume tests with fake bridges. Native fixture
+smoke on reserved instance3, **not a performance evaluation**, passed24 actions:
+four native ticks/hold,133.364ms median; true firing cooldown, hitbox, damage
+invulnerability, enemy state, projectile variants and line/ring geometry observed.
+Four-snapshot history spans12 ticks. `GetSamples()` returned NaNs for native
+circles; exporter now uses radius for rings, endpoints for lines and explicit
+validity for sampled curves. Native curved attacks remain unverified; Lua
+sampling/invalid-geometry regression tests pass. Raw failed and passing evidence
+is retained under native-smoke through native-smoke-4.
+
+Disposed of own probe games28704 and30488 after verifying exact identities.
+**Reserved instance3 is now STOPPED**, no listener on10002. Its bridge file is
+0.1.4; its temporary fixture was moved out of runtime mods to the artifact
+directory's `deactivated-native-fixture` (recoverable). Never copy that fixture
+to any training installation. No other Steam/game/save state was changed.
+
+Offline native-input audit: exact zero initial logit/value difference from the
+frozen parent. Disposable synthetic-copy CPU PPO timings .448s ->1.374s;
+six-env inference .640ms ->1.058ms; rollout observations28.55MiB ->155.33MiB.
+These are resource/migration checks, not optimized native treatment checkpoints.
+The requested learning intervention is READY but **has not trained any live
+steps**. Git tracks source changes; live learner continues using loaded old
+source despite changed working-tree fingerprints. Goal competence unproven.
+
 ## CURRENT: September 15, 17:52 Toronto — recovered stopped run; six workers LIVE
 
 **Current learner31448**, creation **1789509120.8056352**, session

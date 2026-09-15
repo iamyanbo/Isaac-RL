@@ -9,7 +9,7 @@ import torch
 
 from .bridge import Bridge
 from .env import IsaacEnv
-from .ppo import ActorCritic, as_tensor
+from .ppo import load_policy, as_tensor
 from .observation import resolve_observation_profile
 from .storage import atomic_json, load_snapshot, source_fingerprint
 from .rewards import profile_manifest
@@ -80,10 +80,7 @@ def main():
     saved,digest,payload = load_snapshot(args.checkpoint,args.device)
     control = configure_evaluation(args,saved)
     observation_profile = resolve_observation_profile(checkpoint=saved)
-    if saved["architecture"] != 1:
-        raise RuntimeError("Unsupported checkpoint architecture")
-    model = ActorCritic().to(args.device)
-    model.load_state_dict(saved["model"])
+    model,_ = load_policy(saved,args.device)
     model.eval()
     output = args.output or args.checkpoint.parent / f"eval-{time.time_ns()}"
     output.mkdir(parents=True,exist_ok=False)

@@ -4,7 +4,8 @@ import gymnasium as gym
 import numpy as np
 
 from .bridge import Bridge, BridgeError
-from .observation import CHANNELS, HEIGHT, WIDTH, VECTOR_SIZE, encode, resolve_observation_profile
+from .observation import HEIGHT, WIDTH, encode, resolve_observation_profile, observation_manifest
+from .history import ObservationHistory
 from .rewards import PROFILES, door_potential
 from .timing import ControlTiming, NATIVE_HZ, REFERENCE_FRAMES
 
@@ -20,9 +21,11 @@ class IsaacEnv(gym.Env):
         self.bridge = bridge or Bridge()
         self.frames, self.max_steps, self.idle_limit = frames,max_steps,idle_limit
         self.action_space = gym.spaces.MultiDiscrete([9,5,4])
+        layout = observation_manifest(self.observation_profile)
+        self.history = ObservationHistory() if self.observation_profile == "combat_history_v3" else None
         self.observation_space = gym.spaces.Dict({
-            "grid":gym.spaces.Box(0,1,(CHANNELS,HEIGHT,WIDTH),np.float32),
-            "vector":gym.spaces.Box(-1,1,(VECTOR_SIZE,),np.float32),
+            "grid":gym.spaces.Box(0,1,(layout["channels"],HEIGHT,WIDTH),np.float32),
+            "vector":gym.spaces.Box(-1,1,(layout["vector_size"],),np.float32),
         })
         self.state = None
         self.connected = False
@@ -46,11 +49,20 @@ class IsaacEnv(gym.Env):
         self.clear_ids = {int(k) for k,v in self.state["cleared"].items() if v}
         self.combat_rooms = {self.state["room"]["id"]} if self.state["room"]["enemies"] else set()
         self.combat_clear_ids = set()
+        self.combat_clear_alive_ids = set()
         self.steps, self.episode_reward, self.idle = 0,0.0,0
         self.episode_native_frames = self.frame_delta = 0
         self.finished = False
         self._visit(self.state)
-        return encode(self.state,self.cells,self.observation_profile,self.control.scale), self._info()
+        if self.history is not None:
+            self.history.reset()
+        observation = self._observation()
+        return observation, self._info()
+
+    def _observation(self, action=None):
+        if self.history is not None:
+            return self.history.append(self.state,self.cells,self.control.scale,action)
+        return encode(self.state,self.cells,self.observation_profile,self.control.scale)
 
     def _visit(self, state):
         p = state["player"]
@@ -81,6 +93,8 @@ class IsaacEnv(gym.Env):
         new_combat_clear = new_clear and after["room"]["id"] in self.combat_rooms
         if new_combat_clear:
             self.combat_clear_ids.add(after["room"]["id"])
+            if not after["player"]["dead"]:
+                self.combat_clear_alive_ids.add(after["room"]["id"])
         self.room_ids.add(after["room"]["id"])
         if new_clear:
             self.clear_ids.add(after["room"]["id"])
@@ -111,6 +125,7 @@ class IsaacEnv(gym.Env):
         self.finished = terminated or truncated
         reward = float(sum(components.values()))
         self.episode_reward += reward
+        observation = self._observation(action)
         info = self._info()
         info["reward_components"] = components
         if self.finished:
@@ -122,10 +137,11 @@ class IsaacEnv(gym.Env):
                 "damage_attempted":after["events"].get("damage_attempted",after["events"]["damage_dealt"]),
                 "kills":after["events"]["kills"],
                 "combat_clears":len(self.combat_clear_ids),"reward_profile":self.reward_profile,
+                "combat_clears_alive":len(self.combat_clear_alive_ids),
                 "observation_profile":self.observation_profile,
                 "boss_seen":after["boss_seen"],"boss_defeated":after["boss_defeated"],
                 "reason":"boss_clear" if after["success"] else "death" if q["dead"] else "idle" if self.idle >= self.idle_limit else "time_limit"}
-        return encode(after,self.cells,self.observation_profile,self.control.scale),reward,terminated,truncated,info
+        return observation,reward,terminated,truncated,info
 
     def _info(self):
         s = self.state
@@ -135,7 +151,8 @@ class IsaacEnv(gym.Env):
             "boss_seen":s["boss_seen"],"game_frame":s["frame"],"game_episode":s["episode"],
             "kills":s["events"]["kills"],"damage_dealt":s["events"]["damage_dealt"],
             "combat_clears":len(self.combat_clear_ids),"idle_steps":self.idle,"reward_profile":self.reward_profile,
-            "observation_profile":self.observation_profile}
+            "observation_profile":self.observation_profile,
+            **(self.history.stats if self.history is not None else {})}
 
     def close(self):
         self.bridge.close()

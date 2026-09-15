@@ -4,7 +4,6 @@ Never attaches to occupied ports or writes training checkpoints. Model updates
 are disposable copies, using the SAME captured rollout, weights and optimizer.
 """
 import argparse
-import copy
 import json
 from pathlib import Path
 import statistics
@@ -15,7 +14,7 @@ import numpy as np
 import psutil
 import torch
 
-from .ppo import ActorCritic, optimize
+from .ppo import load_policy, optimize
 from .timing import checkpoint_timing
 from .storage import atomic_json, load_snapshot, source_fingerprint
 from .vector import ParallelIsaac
@@ -41,11 +40,7 @@ def resources():
 
 
 def model_pair(saved, device):
-    model = ActorCritic().to(device)
-    model.load_state_dict(saved["model"])
-    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4, eps=1e-5)
-    optimizer.load_state_dict(copy.deepcopy(saved["optimizer"]))
-    return model, optimizer
+    return load_policy(saved,device,with_optimizer=True)
 
 
 def collect(saved, ports, length):

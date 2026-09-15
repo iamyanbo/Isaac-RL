@@ -6,7 +6,7 @@ import numpy as np
 
 CHANNELS, HEIGHT, WIDTH = 10, 16, 28
 VECTOR_SIZE = 24 + 8 * 8 + 16 * 10 + 16 * 6 + 8 * 6
-OBSERVATION_PROFILES = ("legacy_v1","terrain_v2")
+OBSERVATION_PROFILES = ("legacy_v1","terrain_v2","combat_history_v3")
 # Values verified against the installed game's resources/scripts/enums.lua.
 PLAYER_SOLID_COLLISIONS = frozenset((2,3,4))  # OBJECT, SOLID, WALL; not 5 (except player)
 TERRAIN_HAZARDS = frozenset((8,9,12))  # SPIKES, SPIKES_ONOFF, TNT
@@ -25,6 +25,8 @@ def resolve_observation_profile(requested=None, checkpoint=None, existing_run=Fa
 
 
 def encode(state, cells, profile="terrain_v2", visit_scale=1.0):
+    if profile == "combat_history_v3":
+        raise ValueError("combat_history_v3 requires a per-environment ObservationHistory")
     if profile not in OBSERVATION_PROFILES:
         raise ValueError(f"Unsupported observation profile: {profile}")
     grid = np.zeros((CHANNELS, HEIGHT, WIDTH), np.float32)
@@ -85,3 +87,17 @@ def encode(state, cells, profile="terrain_v2", visit_scale=1.0):
         pickups[i] = [1,*relative(e[0],e[1]),e[6]/400,e[7]/750,e[10]/50]
     vector = np.concatenate([np.asarray(scalars,np.float32),doors.ravel(),enemies.ravel(),projectiles.ravel(),pickups.ravel()])
     return {"grid":grid,"vector":np.clip(vector,-1,1)}
+
+
+def observation_manifest(profile):
+    if profile not in OBSERVATION_PROFILES:
+        raise ValueError(f"Unsupported observation profile: {profile}")
+    if profile == "combat_history_v3":
+        from .history import HISTORY, HISTORY_VECTOR_SIZE, FRAME_VECTOR_SIZE
+        return dict(profile=profile,architecture=2,channels=CHANNELS*HISTORY,
+            vector_size=HISTORY_VECTOR_SIZE,history=HISTORY,frame_vector_size=FRAME_VECTOR_SIZE,
+            native_schema="combat_v1",order="newest_first",actions="three intervening executed actions, one-hot 9/5/4",
+            identity="InitSeed-aligned entity tracks within each sample; no seed values input",
+            boundary="zero-pad and invalidate history on episode or room change",
+            enemy_tracks=16,hazard_tracks=32,laser_samples=8)
+    return dict(profile=profile,architecture=1,channels=CHANNELS,vector_size=VECTOR_SIZE,history=1)

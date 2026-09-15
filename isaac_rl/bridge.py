@@ -47,6 +47,10 @@ class Bridge:
         try:
             value = json.loads(line)
         except (ValueError, UnicodeDecodeError) as exc:
+            if self.trace:
+                self.trace.write(json.dumps({"time":time.time(),"direction":"game",
+                    "parse_error":str(exc),"wire":line.decode("utf-8",errors="replace")})+"\n")
+                self.trace.flush()
             raise BridgeError("Invalid game JSON") from exc
         if self.trace:
             self.trace.write(json.dumps({"time": time.time(), "direction": "game", "message": value}) + "\n")
