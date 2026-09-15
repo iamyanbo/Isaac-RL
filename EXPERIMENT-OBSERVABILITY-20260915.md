@@ -37,14 +37,16 @@ or a claim about multi-second planning.
 
 ## Exact change
 
-Native bridge 0.1.4 retains the existing 12-column entities and adds a versioned
+Native bridge 0.1.5 retains the existing 12-column entities and adds a versioned
 `combat_v1` sidecar. It exports:
 
 - Player Size/SizeMulti, current FireDelay, damage cooldown in **render frames**,
   invincibility effect and combined invulnerable flag, shooting availability,
   flight and collision class.
 - Per-entity identity, collision ellipse and damage/class; NPC state, state
-  frame and sprite frame; projectile height/falling speed/acceleration; bomb fuse.
+  frame and sprite frame; projectile height/falling speed/acceleration; bomb age.
+  Bomb age is not a remaining-fuse estimate: vanilla exposes a fuse setter but
+  no readable countdown. The originally attempted property was invalid.
 - Laser kind, endpoint/angle for lines, center/radius for rings, up to eight
   points for sample lasers, timeout and explicit geometry validity.
 
@@ -107,7 +109,7 @@ handover, preserve and fork the final current checkpoint, not this now-older
 snapshot.** Record that final SHA, decision/native-tick origin, source hashes
 and new run directory in experiment metadata. The live learner must save/exit
 cleanly; verify PID+creation time and free ports before any new listener. Only
-then update/restart the six scoped private games with bridge 0.1.4. Never install
+then update/restart the six scoped private games with bridge 0.1.5. Never install
 the test fixture in training, modify personal saves, or enable an automatic
 restart policy. Require all six native schema handshakes before the first update.
 
@@ -202,7 +204,7 @@ Actual live treatment throughput and full-floor coverage remain to be measured.
 
 Residual information limits: a finite 400ms context, 16 enemy/32 hazard tracks,
 eight-point curve approximation, projectile behavior flags and some special
-effect hazards not encoded, no persistent action history across rooms, no
+effect hazards and remaining bomb fuse not encoded, no persistent action history across rooms, no
 multi-second memory and no claim of a fully Markov state. Overflow/invalid geometry
 must be audited in actual training before blaming optimization for failure.
 
@@ -212,3 +214,28 @@ for shape-specific geometry, [Entity](https://wofsauge.github.io/IsaacDocs/rep/E
 for collision size and [EntityProjectile](https://wofsauge.github.io/IsaacDocs/rep/EntityProjectile.html)
 for projectile motion fields. Installed-game traces take precedence over assumed
 availability or interpretation of these APIs.
+
+### Activation regression, September 15
+
+The user approved the one-time handover. Final parent is **4,014,636 steps /
+4,504 updates / 6,175,744 native ticks**, SHA256
+**58a28f1524b62dd64432bda0ae63a19ac3db4ce312c13a9401d31ce1f429db46**.
+The old learner and all six old private games exited with code0.
+
+The first new learner23940 failed in collection at4,014,666 reported steps,
+before any optimizer update: a real bomb omitted the nonexistent
+`ExplosionCountdown` property. Initial checkpoint remains4,014,636 with exact
+zero-padded parent model/Adam/RNG inheritance verified; no optimized training
+was lost. Terminal status, traceback and bridge source are retained in
+`activation-failure/`. No live learner was stopped in response to this error.
+
+Correction within the same information mechanism: replace the unimplemented
+fuse slot with actual native `Entity.FrameCount` bomb age; preserve the same
+input width and all training settings. Bridge0.1.5, two added regression tests,
+**142 tests passing**. An expanded reserved-instance native fixture passed all
+12 checks over24 actions, now including changing native bomb age. Evidence:
+`native-bomb-smoke/`; no probe transitions enter learning. This is completion
+of the specifically authorized handover, not an automatic restart policy.
+[EntityBomb API](https://wofsauge.github.io/IsaacDocs/rep/EntityBomb.html) documents
+the setter; [Entity API](https://wofsauge.github.io/IsaacDocs/rep/Entity.html)
+documents FrameCount. No hypothetical default fuse is supplied to the policy.

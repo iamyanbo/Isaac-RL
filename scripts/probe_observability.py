@@ -48,6 +48,7 @@ def main():
             player_hitbox_observed=all(p["size"]>0 and len(p["size_multi"])==2 for p in players),
             projectile_variants_observed=len({e[6] for e,x in hazards if e[4]==2})>=2,
             enemy_phase_observed=any(e[4]==1 and "state_frame" in x for e,x in hazards),
+            bomb_age_observed=len({x["bomb_age"] for e,x in hazards if e[4]==4})>=2,
             linear_laser_geometry=any(e[4]==7 and not x["circle"] and len(x["samples"])>=2 and x["endpoint"] != e[:2] for e,x in hazards),
             ring_laser_geometry=any(e[4]==7 and x["circle"] and x["radius"]>0 for e,x in hazards),
             history_four_snapshots=info["history_valid"]==4,history_twelve_ticks=info["history_span_ticks"]==12)

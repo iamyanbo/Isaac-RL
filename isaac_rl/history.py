@@ -26,7 +26,7 @@ def squash(value, scale):
 
 def validate(state):
     if state.get("combat_schema") != "combat_v1":
-        raise BridgeError("combat_history_v3 requires native combat_v1 (bridge 0.1.4); do not silently pad missing fields")
+        raise BridgeError("combat_history_v3 requires native combat_v1 (bridge 0.1.5); do not silently pad missing fields")
     try:
         player = state["combat_player"]
         for key in ("size","size_multi","fire_cooldown","damage_cooldown_render_frames",
@@ -42,7 +42,7 @@ def validate(state):
             for key in ("size_multi","collision","collision_damage"):
                 extra[key]
             keys = {1:("npc_state","state_frame","animation_frame"),
-                    2:("height","falling_speed","falling_accel"),4:("countdown",),
+                    2:("height","falling_speed","falling_accel"),4:("bomb_age",),
                     7:("endpoint","angle","radius","circle","sample","timeout","samples","sample_count","geometry_valid")}.get(entity[4],())
             for key in keys:
                 extra[key]
@@ -156,7 +156,7 @@ class ObservationHistory:
                             squash(x.get("falling_accel",0),1),float(x.get("circle",False)),float(x.get("sample",False)),
                             *(relative(*x["endpoint"]) if laser else [0,0]),squash(x.get("radius",0),500),
                             math.sin(angle) if laser else 0,math.cos(angle) if laser else 0,squash(x.get("timeout",0),60),
-                            len(x.get("samples",[]))/8,*samples.ravel(),squash(x.get("countdown",0),60),
+                            len(x.get("samples",[]))/8,*samples.ravel(),squash(x.get("bomb_age",0),60),
                             squash(x["collision_damage"],10),float(x.get("geometry_valid",False))]
             validity_age[age] = [1,(current["episode_frame"]-s["episode_frame"])/90]
             # Action stored on the resulting snapshot. Only expose it when the

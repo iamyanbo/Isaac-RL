@@ -34,7 +34,7 @@ def entity(s, identity, x, kind=2, **changes):
     extra = dict(id=identity,size_multi=[1,1],collision=4,collision_damage=1,
         height=-10,falling_speed=0,falling_accel=0,npc_state=3,state_frame=10,animation_frame=2,
         endpoint=[500,200],angle=0,radius=30,circle=False,sample=False,timeout=60,
-        samples=[[x,200],[500,200]],sample_count=2,countdown=10,geometry_valid=True)
+        samples=[[x,200],[500,200]],sample_count=2,bomb_age=10,geometry_valid=True)
     extra.update(changes)
     s["entities"].append(e)
     s["combat_entities"].append(extra)
@@ -162,6 +162,16 @@ def test_unknown_native_curve_geometry_is_masked_and_reported(combat_state):
     obs = append(history,combat_state)
     assert hazards(obs)[0,-1] == 0
     assert history.stats["invalid_laser_geometry"] == 1
+
+
+def test_bomb_age_is_encoded_without_assuming_a_readable_fuse(combat_state):
+    _,extra = entity(combat_state,1,100,4,bomb_age=0)
+    assert "countdown" not in extra
+    first = append(ObservationHistory(),combat_state)
+    extra["bomb_age"] = 20
+    second = append(ObservationHistory(),combat_state)
+    assert hazards(first)[0,43] == 0
+    assert hazards(second)[0,43] == pytest.approx(20/80)
 
 
 @pytest.mark.parametrize("boundary",["room","episode","stage"])

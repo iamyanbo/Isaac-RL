@@ -76,7 +76,9 @@ local function combatEntity(e, kind)
         result.height, result.falling_speed, result.falling_accel =
             projectile.Height, projectile.FallingSpeed, projectile.FallingAccel
     elseif kind == 4 then
-        result.countdown = e:ToBomb().ExplosionCountdown
+        -- Vanilla exposes SetExplosionCountdown, but no readable fuse getter.
+        -- Export actual native age; never invent remaining time from a default.
+        result.bomb_age = e.FrameCount
     elseif kind == 7 then
         local laser = e:ToLaser()
         result.circle, result.sample = laser:IsCircleLaser(), laser:IsSampleLaser()
@@ -193,7 +195,7 @@ local function snapshot()
         events={damage_taken=damageTaken,damage_dealt=damageDealt,damage_attempted=damageAttempted,kills=kills},
         visited=visits,cleared=cleared,boss_seen=bossSeen,boss_defeated=bossDefeated,
         success=bossDefeated,terminal=player:IsDead() or bossDefeated,
-        mode="full_floor",bridge_version="0.1.4",bridge_port=PORT,damage_signal="hp_delta_v1"
+        mode="full_floor",bridge_version="0.1.5",bridge_port=PORT,damage_signal="hp_delta_v1"
     }
 end
 
