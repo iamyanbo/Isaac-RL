@@ -1,5 +1,84 @@
 # Current handoff — 2026-09-15
 
+## CURRENT: September 15, 18:52 Toronto — enriched-history SIX-WORKER training LIVE
+
+**Learner2152 / creation1789512768.613361**, session
+**session-1789512773700976500**, trains `runs/ppo-observability-v8`, uncapped,
+CPU/two Torch threads, six instances0/1/2/4/5/6 on9999/10000/10001/10003/10004/10005.
+**The user-approved one-time handover is COMPLETE. Never stop this live learner
+without new approval. This is not an automatic restart policy.** Older pending
+approval and completion-run sections below are historical.
+
+Only learning direction: native combat enrichment plus four snapshots/three
+intervening executed actions, observation `combat_history_v3`, architecture2.
+Bridge **0.1.5**, SHA256
+**d2272113015894565d810e4934b3ebfa692196e6961c6b29130d6a81822c512d**.
+All six initial native states confirmed combat_v1/0.1.5/normal Isaac/floor1.
+Worker telemetry confirmed four ticks/action, four valid snapshots/12 ticks,
+zero omitted hazards and zero invalid laser geometry in the observed sample.
+Reward completion_v4, entropy .002, timing physical_v1, gamma/GAE, rollout256/env,
+batch256, Adam/groups, hidden layers/action heads, episode6750/idle900 and all
+other training settings remain unchanged. No evaluation/performance claims.
+
+Parent learner31448 saved/exited with code0 at **4,014,636 decisions / 10,397
+historical episodes / 4,504 updates / 6,175,744 counted native ticks**. Its six
+native games received scoped WM_CLOSE and exited0. Final parent is preserved
+byte-identically in `runs/observability-intervention-20260915/parent-final.pt`
+and `runs/ppo-observability-v8/parent.pt`, identical to completion-v7/latest.pt:
+SHA256 **58a28f1524b62dd64432bda0ae63a19ac3db4ce312c13a9401d31ce1f429db46**.
+The older3,970,764 preparation snapshot was NOT used for this fork. Previous
+5,377,722 control checkpoint and all archived baselines remain intact.
+
+Initial activation23940 exited error/cleanup complete before any PPO update:
+native bomb omitted nonexistent ExplosionCountdown. Failure at4,014,666
+reported decisions; saved checkpoint remained4,014,636. Evidence retained in
+activation-failure and old session/stderr files. Verified learner absent and
+ports released before reloading scoped games. Corrected export uses native
+**bomb age FrameCount, not remaining fuse**. No fuse getter is available in
+vanilla. Same vector width, no optimized weight used the invalid slot. Commit
+**4e15780** fixes that implementation error; initial implementation75e5614.
+**142 tests pass**, plus expanded native bomb/geometry/cooldown fixture's12
+checks over24 actions. Reserved probe29000 was closed (exit0); fixture moved
+to deactivated-bomb-fixture, outside runtime mods. Reserved instance3 is STOPPED.
+No training fixture, personal-save changes, Steam changes or gameplay assistance.
+
+Corrected native game identities (existing executables/resources retained;
+only bridge main.lua/metadata.xml replaced, old copies/logs archived):
+0=25328/1789512764.3619049;1=13632/1789512764.3801577;
+2=12396/1789512764.3941047;4=16968/1789512764.4084795;
+5=32288/1789512764.4234695;6=31552/1789512764.4394803.
+Only bridge scripts loaded; native process metadata updated. Native-after.json
+records the failed-start generation; native-final.json is the CURRENT generation.
+
+First activation initial snapshot3f589bf39316b85608fcaadfed501345f582191696ec95df1a3fa0ba8fe314f4
+matches the final parent's model/Adam after zero expansion; original moments,
+optimizer steps, RNG and counters exactly retained. Corrected-start initial
+snapshot `treatment-resumed-initial.pt`, SHA256
+**5676db50c5e0dbcc0ca258be76c3c485bdc4950220ad8886c42634cbf57cac35**,
+exactly matches that model/Adam/RNG/settings and uses current source hashes.
+Verification artifacts initial-verification.json/resumed-initial-verification.json.
+
+First REAL optimized update **4505 / 4,016,172 decisions / 6,181,886 native ticks**:
+1,536 decisions,6,142 native ticks; collection38.0885s/PPO0.3693s/wall40.7005s,
+37.739 decisions/s. CPU remains appropriate; PPO early stopping unchanged.
+Frozen `first-observed-optimized.pt` is after the SECOND update4506,
+4,017,708 decisions/6,188,027 native ticks, SHA256
+**23955e872338aa98e316e78c5bd529184edaab9771f2f2c0fa6035447745a3df**.
+All16 parameter tensors changed and finite; new input columns/channels acquired
+nonzero weights; Adam groups/source hashes match. See optimized-verification.json.
+Third update4507/4,019,244 also completed. New stderr185248 is empty; old184638
+stderr is preserved failure evidence, not current failure. Windows commit about
+49–50%,31–32GiB available. This does not prove the long-run allocation risk fixed.
+
+**Current charts http://127.0.0.1:8769/**, dashboard33564. API lifecycle ALIVE,
+serves observability-v8/new learner. Old8768/dashboard30664 remains the completion
+baseline's read-only history. No current stop.request. First review threshold:
+**5,214,636 cumulative decisions** (+1.2M from final parent); nominal cumulative
+native ticks10,975,744, report exact early-terminal ticks. This is a manual review
+threshold, not an automatic training cap/stop/restart. Manifest and experiment.json
+record the seed-held-out falsification condition. Goal competence still unproven;
+leave detached training running. This turn made actual training PROGRESS. PAUSE.
+
 ## CURRENT: September 15, 18:38 Toronto — observability prepared; old six-worker run STILL LIVE
 
 Learner **31448 / creation1789509120.8056352**, session

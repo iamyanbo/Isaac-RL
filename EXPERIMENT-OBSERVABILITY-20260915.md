@@ -4,9 +4,11 @@
 
 One direction: `combat_history_v3`, native current-state enrichment plus four
 snapshots and their three intervening executed actions. No GRU or LSTM.
-Implemented and tested; **not activated in the live learner**. The current
-six-worker `ppo-completion-v7` remains running. A one-time checkpointed handover
-was requested separately because standing instructions prohibit stopping it.
+**Activated: six-worker `runs/ppo-observability-v8`, learner2152, charts8769.**
+The user approved the one-time checkpointed handover. Parent completion-v7 is
+stopped and preserved at its final4,014,636 decisions. First optimized treatment
+update completed at4,016,172; all other learning settings remain unchanged.
+The handover approval is consumed; preserve the new live learner.
 
 This tests whether missing short-horizon combat information is a dominant
 bottleneck. It does not assert that the entire game becomes Markov, or that a
@@ -122,8 +124,8 @@ Fork command once the approved handover/preflight is complete:
   -Device cpu -Steps 0 -DashboardPort 8769
 ```
 
-Do not execute this against occupied training ports. The current dashboard stays
-at http://127.0.0.1:8768/ until an actual handover.
+Do not execute this again against occupied training ports. Current dashboard is
+http://127.0.0.1:8769/;8768 remains the previous run's read-only history.
 
 ## Predeclared falsification condition
 
@@ -239,3 +241,28 @@ of the specifically authorized handover, not an automatic restart policy.
 [EntityBomb API](https://wofsauge.github.io/IsaacDocs/rep/EntityBomb.html) documents
 the setter; [Entity API](https://wofsauge.github.io/IsaacDocs/rep/Entity.html)
 documents FrameCount. No hypothetical default fuse is supplied to the policy.
+
+### Completed handover and review origin
+
+Corrected learner **2152 /1789512768.613361**, session
+session-1789512773700976500, resumed the untouched initial checkpoint. Snapshot
+`treatment-resumed-initial.pt` SHA256
+**5676db50c5e0dbcc0ca258be76c3c485bdc4950220ad8886c42634cbf57cac35**
+has exact model/Adam/RNG/counter inheritance and the corrected source hashes.
+All six native workers use0.1.5/combat_v1, four ticks and 12-tick history.
+
+First update4505:4,016,172 decisions/6,181,886 native ticks; collection38.0885s,
+PPO0.3693s,wall40.7005s,37.739 decisions/s. The archived
+`first-observed-optimized.pt` is the SECOND update4506 at4,017,708 decisions,
+SHA256 **23955e872338aa98e316e78c5bd529184edaab9771f2f2c0fa6035447745a3df**.
+All16 tensors changed and finite; new inputs have nonzero learned weights; Adam
+groups unchanged. Evidence is in the initial/resumed/optimized verification JSONs.
+The first three optimizer updates completed without new stderr errors. No new
+held-out evaluation was launched; competence remains unproven.
+
+Fixed review threshold: **5,214,636 total decisions** (+1.2M); nominal counted
+native ticks10,975,744, with exact early-terminal ticks reported separately.
+This does not cap or automatically stop the detached learner. Only the specifically
+approved handover and its startup correction were performed; no auto-restart
+policy was introduced. Current native process IDs and failure history are in
+OPERATIONS.md; runtime fixture3 is stopped and deactivated.

@@ -6,19 +6,27 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
-### Prepared observability change — September 15
+### Current training — enriched history, September 15
 
+**Live: `runs/ppo-observability-v8`, learner2152, six workers, CPU, four ticks/action.**
 `combat_history_v3` adds native combat fields and four snapshots with intervening
 actions. Input widening preserves the parent's initial policy and Adam state.
-Native schema smoke and migration tests pass; **the six-worker live learner has
-not switched**. Activation requires the separately requested one-time handover,
-using its final checkpoint rather than an older preparation snapshot. See the
+The approved handover is complete, using the **final4,014,636-step checkpoint**,
+preserved byte-for-byte. The first real PPO update completed at4,016,172; finite
+changed weights and gradients into new inputs are verified. All other learning
+settings remain unchanged. **142 tests and native smoke checks pass**. A startup
+bomb-field error was corrected before the first optimizer update; bridge0.1.5
+exports actual bomb age, not an unavailable fuse countdown. See the
 [observability experiment](EXPERIMENT-OBSERVABILITY-20260915.md) for the exact
 change, unchanged settings, evidence and predeclared falsification condition.
 
-### Current training — completion rewards, September 15
+**Charts: http://127.0.0.1:8769/**. Review at5,214,636 cumulative decisions;
+training is uncapped and must not be stopped without new approval. No competence
+claim follows from passing tests or loss curves. OPERATIONS.md has current IDs.
 
-**Live: `runs/ppo-completion-v7`, six workers, CPU, four ticks/action.**
+### Historical baseline — completion rewards, September 15
+
+**Stopped after authorized observability handover: `runs/ppo-completion-v7`.**
 `completion_v4` removes damage/kill bonuses, retaining combat-room and boss-clear
 rewards and all other settings. Baseline3,419,340 is preserved byte-for-byte and
 used to initialize the new run; the old run's final5,377,722 checkpoint is archived
@@ -26,7 +34,7 @@ separately. Authorized handover complete; learner46824's first real update verif
 at3,420,876 with finite changed weights. **113 tests passed.** No new evaluation
 launched; improved boss competence remains unproven. Do not stop this learner.
 
-**Current charts: http://127.0.0.1:8768/**. Read-only history service:
+**Baseline charts: http://127.0.0.1:8768/**. Read-only history service:
 `.\scripts\launch_dashboard.ps1 -Run runs/ppo-completion-v7 -Port 8768`.
 See
 [the completion-reward experiment](EXPERIMENT-COMPLETION-20260914.md).
