@@ -8,12 +8,13 @@ completion (+10), verified first-floor boss completion (+100), and every other
 reward/control/learning setting. This is a categorical ablation of positive
 within-combat proxy rewards, not a search for better coefficients.
 
-**Implemented; NOT launched.** The existing six-worker learner20984 remains live
-in `runs/ppo-control-v6`. Its Python imports keep the original reward profile.
-No learner stop request, signal, game restart, or new evaluation was issued.
-One checkpointed handover needs fresh user approval under the never-stop rule.
-The user's latest instruction is a training change, not another evaluation;
-completion of the already-running comparison is not a gate for this change.
+**LIVE as of September 15.** The user's "make the changes" authorized one
+checkpointed handover. Learner46824 (creation1789476850.9710472) runs
+`runs/ppo-completion-v7` on the same six games. Old learner20984 saved/exited
+cleanly at5,377,722; its final checkpoint is separately archived. The new run
+starts from the declared frozen3,419,340 baseline, whose bytes match `parent.pt`.
+This one-time approval is consumed; never stop the new learner without further
+approval. No new evaluation was launched. Current charts: http://127.0.0.1:8768/.
 
 Verification: **113 tests passed**, including five new tests covering the exact
 reward delta, unchanged observations/endings/idle accounting, retained completion
@@ -92,12 +93,14 @@ Only the reward/loss reporting windows clear on profile fork, as existing code
 already requires for incomparable reward units. Old value estimates will initially
 reflect the old target; that transient is acknowledged, not tuned away this turn.
 
-## Launch after one-time checkpointed handover approval
+## Executed handover and launch
 
-Verify exact current learner/game identities before any native action. Cooperatively
-save/exit the authorized learner, archive its final state, verify its exit and
-port release, then reuse the same six games. Do not create six additional games
-or steal sockets. Preserve the independent evaluator on10002.
+Exact learner/game identities and baseline hash were verified before the cooperative
+stop. The old learner saved/exited normally and all six ports were released before
+launch. Final checkpoint/status/states and stop marker were archived. No extra
+games were created. Worker0 reached Game Over during the gap; one guarded normal
+Space restart restored its connection after screenshot/native-log verification.
+The other five games needed no input. Reserved instance3 remained untouched.
 
 ```powershell
 .\scripts\launch_parallel.ps1 -Run runs/ppo-completion-v7 `
@@ -106,16 +109,26 @@ or steal sockets. Preserve the independent evaluator on10002.
   -RewardProfile completion_v4 -DashboardPort 8768
 ```
 
-The launcher makes an exact `parent.pt` copy. Omitted timing, schedule, entropy,
-and observation options inherit the checkpoint. Its existing occupied-port guard
-prevents launching over the live learner; do not bypass it. Do not run this command
-before handover approval and port-release verification. Current charts stay8767.
+The launcher made an exact `parent.pt` copy. Omitted timing, schedule, entropy,
+and observation options inherited the checkpoint. This command has already run;
+do not repeat it against the live learner. The existing occupied-port/run guards
+must not be bypassed. Old charts8767 remain baseline history.
 
-Verify the first real six-worker PPO update: identical parent digest; correct
-profile in config/checkpoint/status; zero damage/kill reward components with
-unchanged raw counters; finite changed weights; all six frame deltas4; original
-Adam parameter groups/schedule; empty stderr; correct chart run. No success claim
-follows from this implementation check.
+Verified first real update4117 at3,420,876:1,536 transitions,6,140 native ticks,
+collection38.241356s/PPO0.406807s,37.3187 decisions/s. The archived checkpoint
+`first-observed-treatment.pt` has all16 model tensors finite and changed; original
+Adam parameter groups and schedule retained. Parent digest, profiles, source hashes,
+six established connections/four-tick deltas, zero proxy reward terms, retained
+raw damage counters, empty stderr and chart run identity verified. The observed
+checkpoint was already post-update, not a pre-update model/RNG snapshot.
+
+Archived final parent SHA256:
+`31740cdf0a3a99fbdf8415dcbaaf62b2240e9483233ab2c8cc54899420661f49`.
+Archived first treatment update SHA256:
+`1121ec697dedd94063a3ab52cfda126ee5c916160e570b8efe2c29e7074f192a`.
+Both are under `runs/completion-intervention-20260914`. The original baseline is
+unchanged. See OPERATIONS.md and the local experiment manifest for identities and
+handoff evidence. No competence improvement is claimed from a successful launch.
 
 Assess adaptation at +2.4M controlled native ticks (600k new decisions), not by
 comparing shaped returns across profiles. Require evidence of improved combat

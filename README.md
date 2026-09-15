@@ -6,18 +6,25 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
-### Next training change — implemented, handover pending
+### Current training — completion rewards, September 15
 
+**Live: `runs/ppo-completion-v7`, six workers, CPU, four ticks/action.**
 `completion_v4` removes damage/kill bonuses, retaining combat-room and boss-clear
-rewards and all other settings. Baseline3,419,340 is preserved byte-for-byte;
-the current six-worker `ppo-control-v6` learner remains running and unchanged.
-The next run `ppo-completion-v7` has **not** launched: it needs one-time checkpointed
-handover approval. No new evaluation is a prerequisite. See
+rewards and all other settings. Baseline3,419,340 is preserved byte-for-byte and
+used to initialize the new run; the old run's final5,377,722 checkpoint is archived
+separately. Authorized handover complete; learner46824's first real update verified
+at3,420,876 with finite changed weights. **113 tests passed.** No new evaluation
+launched; improved boss competence remains unproven. Do not stop this learner.
+
+**Current charts: http://127.0.0.1:8768/**. Read-only history service:
+`.\scripts\launch_dashboard.ps1 -Run runs/ppo-completion-v7 -Port 8768`.
+See
 [the completion-reward experiment](EXPERIMENT-COMPLETION-20260914.md).
 
-### Current training — four-tick control, September 14
+### Historical baseline — four-tick control, September 14
 
-**Live: `runs/ppo-control-v6`, six workers, CPU, four native ticks/action (133 ms).**
+**Stopped after authorized handover: `runs/ppo-control-v6`.**
+Six workers, CPU, four native ticks/action (133 ms).
 The user authorized this timing intervention after the native trace audit.
 Discount/GAE decay, time cost, episode/idle budgets, rollout/minibatch sizes and
 visit-map intensity were converted to preserve physical-time meaning. Architecture,
@@ -30,7 +37,7 @@ full PPO update verified at2,471,628,38.21 aggregate decisions/s. Optimized weig
 checkpoint inheritance and four-tick worker advancement verified;108 tests passed.
 Training success is still unproven. Do not stop/relaunch a live learner.
 
-**Current charts: http://127.0.0.1:8767/**. Reopen only the history service with
+**Baseline charts: http://127.0.0.1:8767/**. Reopen only the history service with
 `.\scripts\launch_dashboard.ps1 -Run runs/ppo-control-v6 -Port 8767`.
 Plain resume inherits `physical_v1`, four frames, and converted schedules from the
 checkpoint; no timing change is permitted inside an existing run. Old8766/8765

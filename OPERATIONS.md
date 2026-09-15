@@ -1,5 +1,70 @@
 # Current handoff — 2026-09-15
 
+## CURRENT: completion-reward six-worker training LIVE; approved handover complete
+
+The user said **"make the changes"** in response to the one-time handover question.
+That handover is now complete. **New learner46824**, creation
+**1789476850.9710472**, session **session-1789476854270681600**, run
+**runs/ppo-completion-v7**, CPU/two Torch threads, uncapped, six instances0/1/2/4/5/6
+on9999/10000/10001/10003/10004/10005. **Never stop this learner without new approval**;
+the consumed exception is not an automatic restart policy. Previous pending-approval
+and blocked notes below are historical. This turn is PROGRESS: native launch and
+first real optimized checkpoint verified; full-floor competence remains unproven.
+
+Only training mechanism changed: **confirmed_v3 → completion_v4**, damage0.2→0
+and kill0.5→0. Combat-clear10, boss100, all other rewards, raw event counters,
+idle semantics, architecture1/terrain_v2, action heads9/5/4, four ticks/physical_v1,
+gamma/GAE lambda, rollout256/env/minibatch256, max6750/idle900, entropy0.002,
+optimizer and seed remain unchanged. Full tests rerun: **113 passed**.
+
+Old learner20984 saved/exited normally at **5,377,722 steps / 12,386 historical
+episodes / 5,391 updates / 11,625,971 controlled native ticks**, exit0 and cleanup
+complete. Exact identity absent and all six ports released before the new launch.
+Final checkpoint preserved in `runs/completion-intervention-20260914/parent-final.pt`,
+SHA256 **31740cdf0a3a99fbdf8415dcbaaf62b2240e9483233ab2c8cc54899420661f49**.
+Final status/states, pre-handover checkpoint/status and authorized stop marker
+archived alongside. Old run's stop.request intentionally remains as a resume guard.
+No checkpoints or training history deleted.
+
+Treatment intentionally starts from the previously frozen **3,419,340** baseline,
+not the overnight final checkpoint. `baseline.pt` and new run's `parent.pt` both
+SHA256 **e1498fbcade44ff8f562220735ff4a94bc933534bd9fed6c98ad3a120c76e0b9**.
+Native counter starts at inherited3,795,560, retaining origin2,470,092 steps.
+The old branch's additional training remains archived, not merged into this fork.
+
+First full update **4117 / 3,420,876 steps**:1,536 transitions,6,140 actual native
+ticks (early deaths shorten some holds), collection38.241356s, PPO0.406807s,
+wall41.158942s, **37.3187 aggregate decisions/s**. Frozen after-update checkpoint
+`first-observed-treatment.pt`, SHA256
+**1121ec697dedd94063a3ab52cfda126ee5c916160e570b8efe2c29e7074f192a**:
+all16 model tensors changed and finite; Adam parameter groups and inherited
+settings unchanged. A first attempted initial-state assertion correctly failed
+because the copied checkpoint had already optimized; the artifact was renamed
+and verified as this first-update checkpoint, not misreported as pre-update state.
+
+Verified beyond3,423,420/update4118: all six established sockets owned46824,
+all six frame deltas4, completion_v4 in worker telemetry, zero damage/kill payments
+while raw damage remained recorded. Source fingerprints match the launch manifest.
+Learner stderr `runs/ppo-completion-v7/stderr-20260915-085410.log` empty. Native
+game PIDs unchanged:0=6996,1=13120,2=34576,4=24640,5=39876,6=25388; all six bridge
+hashes unchanged. Worker0 reached Game Over during the gap; screenshot and native
+log confirmed it. With exact game/learner identities, listener46824 and no9999
+connection verified, one normal Space restart input restored it. No game process
+or new learner restarted/killed; no other menu input or visibility change.
+
+**Current charts http://127.0.0.1:8768/**, dashboard **46344**, HTTP/API verified to
+serve ppo-completion-v7 and learner46824. Old8767 remains baseline history; earlier
+8766/8765 likewise. First update commit95.66%,4.20GiB available. Do not add games
+or modify unrelated processes/saves. Reserved evaluator10544 already finished;
+instance3 remains untouched. **No new evaluation launched.**
+
+Next manual review at **+2,400,000 treatment native ticks**, i.e. cumulative
+**6,195,560** (roughly4,019,340 aggregate decisions; early-death holds alter this).
+Compare actual combat completion, health and boss outcomes, not shaped returns
+across profiles. Do not introduce another mechanism or default to tuning before
+reviewing this run. Revalidate exact identities on resume. Leave detached training
+running and end bounded work with PAUSE. See EXPERIMENT-COMPLETION-20260914.md.
+
 ## CURRENT: September 15, 08:50 Toronto — overnight check; handover still pending
 
 Learner **20984**, creation **1789400666.5494964**, identity verified LIVE with
