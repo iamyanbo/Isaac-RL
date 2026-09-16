@@ -6,9 +6,17 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
-### Current training — enriched history, September 15
+### Current training — enriched history, September 16
 
 **Live: `runs/ppo-observability-v8`, learner30608, six workers, CPU, four ticks/action.**
+Overnight review:5.80M saved decisions, zero recorded wins in2681 treatment
+episodes. Training remains unchanged. A frozen parent/treatment comparison is
+running separately on reserved instance3:100 held-out seeds each, native evidence,
+no optimizer. The5,214,636 review checkpoint was not retained by latest-only
+checkpointing; the frozen5,797,932 treatment is583,296 decisions late. Results
+will be explicitly exploratory, not a fixed-budget falsification verdict.
+Artifacts: `runs/observability-review-20260916`; process IDs in OPERATIONS.md.
+
 `combat_history_v3` adds native combat fields and four snapshots with intervening
 actions. Input widening preserves the parent's initial policy and Adam state.
 The approved handover is complete, using the **final4,014,636-step checkpoint**,
@@ -24,8 +32,8 @@ byte-identical checkpoint are in `runs/identity-recovery-20260915-2303`. See the
 [observability experiment](EXPERIMENT-OBSERVABILITY-20260915.md) for the exact
 change, unchanged settings, evidence and predeclared falsification condition.
 
-**Charts: http://127.0.0.1:8769/**. Review at5,214,636 cumulative decisions;
-training is uncapped and must not be stopped without new approval. No competence
+**Charts: http://127.0.0.1:8769/**. Training is uncapped and must not be stopped
+without new approval. No competence
 claim follows from passing tests or loss curves. OPERATIONS.md has current IDs.
 
 ### Historical baseline — completion rewards, September 15

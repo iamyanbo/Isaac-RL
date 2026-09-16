@@ -1,4 +1,77 @@
-# Current handoff — 2026-09-15
+# Current handoff — 2026-09-16
+
+## CURRENT: September 16, 09:40 Toronto — six-worker training LIVE; frozen comparison LIVE
+
+Training remains **learner30608 / creation1789528910.5677547**, session
+**session-1789528914816534000**, `runs/ppo-observability-v8`, same six
+instances0/1/2/4/5/6 and ports9999/10000/10001/10003/10004/10005, CPU/two threads,
+four ticks, combat_history_v3/combat_v2. **Do not stop/reconfigure/reconnect this
+learner.** This turn made no training mechanism, setting, checkpoint or native
+training-process change. Current native training identities remain those below.
+On review: PID+creation verified live, all six established sockets, heartbeat<1s,
+empty current stderr. Update5664 saved5,796,396; later5677 also completed. Windows
+commit52–56%,28–31GiB available before reserved comparison; no overnight crash.
+
+Preceding goal turn was a VERIFIED WAIT on the same live learner; its user-facing
+answer was interrupted, but no process action was in flight. This resumed turn
+completed the scheduled review and launched new bounded evidence collection.
+Archived2681 treatment episodes show **zero recorded boss wins**,26 encounters,
+813 episodes with a living combat clear. Last500: zero wins,4 encounters,165
+living-clear episodes,204 idle/296 deaths. These are training logs, not held-out
+competence or a causal verdict about observability.
+
+**Protocol deviation:** planned review5,214,636 passed overnight, but trainer
+retains only latest.pt, no checkpoint at that threshold. No historical target
+weights can be reconstructed from metrics. Immediately froze the first available
+review checkpoint at **5,797,932 decisions /5665 updates /13,306,165 native ticks**:
+`runs/observability-review-20260916/treatment.pt`, SHA256
+**d4d6421021683a3d8dd51c2323ff6a75fb7714b5e969f5b03ba1db9125f3c7f6**.
+Parent4,014,636 copied byte-for-byte into the same directory, SHA256
+**58a28f1524b62dd64432bda0ae63a19ac3db4ce312c13a9401d31ce1f429db46**.
+Actual additional exposure1,783,296; overrun583,296. Selection preceded held-out
+results. **The original fixed-budget falsification is not assessable as
+preregistered.** Late results must remain explicitly exploratory; do not silently
+reset the budget or substitute an even later favorable checkpoint.
+
+New **comparison34416 / creation1789565921.058696**, output
+`runs/observability-review-20260916/comparison`, exclusively owns reserved10002.
+Reserved native **13848 / creation1789565921.170414** uses existing private
+worker03 executable/resources and bridge0.1.6. Hashes checked; only bridge enabled,
+no fixture. Native metadata saved in native-process.json and runtime process.json.
+No training instance/Steam/personal save was touched. The comparison is finite:
+100 native seeds selected BEFORE scoring,200 full-floor episodes total,
+counterbalanced parent/treatment order, same per-seed stochastic action RNG.
+Exclude both frozen checkpoints' seeds, all archived training episodes, observed
+status seeds and the previous uncheckpointed crash tail. Seeds/exclusions saved.
+Hold4, max6750, idle900 inherited exactly; generic evaluation's longer idle
+default is NOT used. Models frozen, no optimizer, no action ablation/curriculum.
+
+Comparison implementation **35e6007**; **163 tests pass**, including full fake
+native main-loop integration, one shared reserved bridge, exact pairing, no Adam
+step, seed exclusions, independent native-clear evidence and budget guard.
+Raw native trace and action transitions are gzip-compressed without dropping
+states. Each episode stores initial/final states and before/after room-clear
+evidence; dead/uncleared/enemies-remaining states cannot count as living clears.
+Counter disagreement with derived telemetry blocks a comparison verdict.
+Complete100-seed results report conservative Wilson delta bounds and boss gate.
+Because budget_compliant=false, original_fixed_budget_hypothesis_rejected is
+ALWAYS null, even if late-checkpoint bounds exclude a10-point improvement.
+Parent comparison cannot isolate representation from additional training time.
+
+At first live verification the comparison had selected33/100 native seeds,
+its exact process and10002 socket were live, training had advanced to5,817,660,
+and both stderr files were empty. Inspect comparison/status.json plus actual
+PID+creation before any action. Do not reconnect/restart a live evaluator; finite
+completion will perform an unscored fresh-room reset, close10002, and exit.
+Final handoff check: all100 seeds selected, unique and disjoint from exclusions;
+parent pair0 underway at920 decisions (no complete episodes yet). Native actions
+are advancing, not merely a queued process. Training saved5,824,044/update5682;
+seven established sockets have correct separate owners, both heartbeats<2s,
+both stderr files empty, memory56.7% commit/27.7GiB available. Reserved window
+hidden after normal menu startup. `live-verification.json` records the checks.
+No automatic restart policy. On next resume inspect result.json/episode evidence
+only after actual completion; do not interpret partial results as final.
+Training charts remain **http://127.0.0.1:8769/**. Goal competence UNPROVEN.
 
 ## CURRENT: September 15, 23:27 Toronto — recovered six-worker learner LIVE
 

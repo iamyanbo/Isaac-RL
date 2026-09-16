@@ -157,6 +157,18 @@ http://127.0.0.1:8769/;8768 remains the previous run's read-only history.
 
 ## Predeclared falsification condition
 
+**September16 review deviation:** the5,214,636 threshold passed during detached
+training. Only latest.pt was retained, so the first checkpoint frozen at resumed
+review is5,797,932 (+1,783,296 from the parent,583,296 beyond budget), SHA256
+`d4d6421021683a3d8dd51c2323ff6a75fb7714b5e969f5b03ba1db9125f3c7f6`.
+No held-out outcomes were used to choose it. Original fixed-budget falsification
+is therefore **not assessable as preregistered**. The same-seed100-per-policy
+comparison proceeds as an explicitly exploratory late-checkpoint review;
+its code withholds the original falsification verdict regardless of the result.
+See `runs/observability-review-20260916/review.json` and `comparison/manifest.json`.
+Live training is unchanged; reserved instance3 hosts only the frozen comparison.
+The original protocol below remains intact for audit, not silently revised.
+
 Budget: **1,200,000 additional aggregate decisions** from the final fork origin
 (nominally 4.8M native ticks; report exact ticks, including early terminal holds).
 This is a review threshold, not an automatic stop/restart policy. Freeze the
