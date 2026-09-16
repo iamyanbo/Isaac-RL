@@ -6,16 +6,36 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
-### Current training — enriched history, September 16
+### Current training — native combat-clear qualification, September 16
 
-**Live: `runs/ppo-observability-v8`, learner30608, six workers, CPU, four ticks/action.**
-Overnight review:5.80M saved decisions, zero recorded wins in2681 treatment
-episodes. Training remains unchanged. A frozen parent/treatment comparison is
-running separately on reserved instance3:100 held-out seeds each, native evidence,
-no optimizer. The5,214,636 review checkpoint was not retained by latest-only
-checkpointing; the frozen5,797,932 treatment is583,296 decisions late. Results
-will be explicitly exploratory, not a fixed-budget falsification verdict.
-Artifacts: `runs/observability-review-20260916`; process IDs in OPERATIONS.md.
+**Live: `runs/ppo-native-clear-v9`, learner37144, six workers, CPU, four ticks/action.**
+Authorized handover complete from the final **6,667,974-step** checkpoint,
+preserved byte-for-byte. Only learning change: stop awarding combat-clear bonuses
+for entering already-cleared rooms with NPCs (`native_clear_v5`). Observations,
+history, architecture, Adam/RNG and all training settings inherit exactly.
+First PPO update6,669,510 verified; all16 parameter tensors changed and finite.
+175 tests and131,829-action native reward replay pass: exactly seven erroneous
++10 payments removed; all other reward components and endings identical.
+See [the experiment](EXPERIMENT-NATIVE-CLEAR-20260916.md) for evidence,
+baseline hashes and explicit falsification. Review target7,867,974 is now
+automatically retained at the first eligible save **without stopping training**.
+
+**Charts: http://127.0.0.1:8770/**. Old8769 remains read-only baseline history.
+The one-time approval is consumed; preserve this live learner. Current process
+identities and handover evidence are in [OPERATIONS.md](OPERATIONS.md).
+
+### Historical baseline — enriched history, September 15–16
+
+`runs/ppo-observability-v8` stopped cleanly after the approved reward handover.
+Its frozen100-seed-per-policy comparison finished with **zero boss wins in both
+arms**. Native strict living-clear episodes22->33 have a broad uncertainty
+interval; a separate native Room.IsClear sensitivity audit gives24->37.
+Seven incorrect room-entry bonuses and seven genuine clears excluded by the
+zero-NPC evidence explain the original14 counter disagreements. The original
+guarded comparison result is preserved unchanged. Review weights5,797,932 were
+583,296 steps late; the original fixed-budget verdict remains unassessable.
+Artifacts: `runs/observability-review-20260916`. Neither these exploratory
+results nor the newly corrected reward establishes boss competence.
 
 `combat_history_v3` adds native combat fields and four snapshots with intervening
 actions. Input widening preserves the parent's initial policy and Adam state.
@@ -32,9 +52,9 @@ byte-identical checkpoint are in `runs/identity-recovery-20260915-2303`. See the
 [observability experiment](EXPERIMENT-OBSERVABILITY-20260915.md) for the exact
 change, unchanged settings, evidence and predeclared falsification condition.
 
-**Charts: http://127.0.0.1:8769/**. Training is uncapped and must not be stopped
-without new approval. No competence
-claim follows from passing tests or loss curves. OPERATIONS.md has current IDs.
+**Baseline charts: http://127.0.0.1:8769/**. This learner is now stopped;
+the current six-worker run is described above. No competence claim follows
+from passing tests or loss curves. OPERATIONS.md has current identities.
 
 ### Historical baseline — completion rewards, September 15
 

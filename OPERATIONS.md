@@ -1,5 +1,72 @@
 # Current handoff — 2026-09-16
 
+## CURRENT: September 16, 16:01 Toronto — corrected-clear SIX-WORKER learner LIVE
+
+**Approved one-time handover COMPLETE.** Learner **37144 / creation1789588746.8131385**,
+session **session-1789588750943756600**, trains `runs/ppo-native-clear-v9`, uncapped,
+CPU/two threads, instances0/1/2/4/5/6, ports9999/10000/10001/10003/10004/10005.
+**Preserve this live learner. No new stop or automatic restart authority.**
+This approval was specifically for the combat-clear reward correction, not another
+observability/architecture change. All older CURRENT sections are historical.
+
+Only learning change: completion_v4 -> **native_clear_v5**, requiring a room to
+have been observed native-uncleared with enemies before its combat-clear bonus.
+All reward coefficients, idle/end conditions, four-tick control/physical_v1,
+combat_history_v3/architecture2, bridge0.1.6/combat_v2, Adam, entropy.002,
+gamma/GAE, rollout256/env, batch256, episode6750/idle900, seed and six workers
+are unchanged. Review-checkpoint retention is operational only, no auto-stop.
+Implementation **f15388a**;175 tests pass. Full native replay200 episodes/131,829
+actions changes exactly seven erroneous +10 payments and nothing else in the
+reward components, idle states or episode endings. Not proof of boss competence.
+
+Old learner30608 saved and exited cleanly (exit0, cleanup complete) at
+**6,667,974 decisions /6,232 updates /14,387 historical episodes /16,784,992
+counted native ticks**. Final checkpoint preserved identically as old latest.pt,
+`runs/native-clear-intervention-20260916/parent-final.pt` and new run parent.pt:
+SHA256 **a1295f92033ebd3bff8a8106e81482f5afda12e93388907dac31e17c80f20621**.
+The6,636,588 preparation snapshot was NOT used. Original5,377,722 control and
+4,014,636 observation-parent checkpoint hashes were also reverified intact.
+Old stop.request intentionally remains; old learner must not silently resume.
+
+All SIX native games reused with exact PID/creation/exe verification; no game,
+Steam, Lua/mod or personal-save changes. Identities:
+0=19508/1789528905.762303;1=17580/1789528905.833454;
+2=31784/1789528905.846059;4=6852/1789528905.8606613;
+5=38476/1789528905.8764212;6=7680/1789528905.8921103.
+Six initial native states confirm normal Isaac, full_floor/floor1, frame1,
+combat_v2/bridge0.1.6. Fresh episode resets at handover are explicit, not
+continuation of a checkpointed native game state. No evaluation was launched.
+
+Actual initial snapshot `initial.pt` in the intervention archive, SHA256
+**d16d13b0b8f72d86ce1e96a0afe8915bfbefe57b2c8fc74da78a168b86dcddd8**,
+matches final parent model/Adam/RNG/counters/settings EXACTLY; only reward/loss
+telemetry windows clear. First REAL optimized update **6233 /6,669,510 decisions /
+16,791,129 native ticks**, archived optimized.pt SHA256
+**da2fe7f78b5ab3f4d2ce31862e6839db8a268a28b7cb8df179710feb21f2103e**.
+All16 parameter tensors changed and finite. Collection38.8427s, PPO1.1237s,
+wall46.0737s,33.3379 decisions/s; CPU unchanged. Second update6234/6,671,046
+also completed. All six sockets owned37144, fresh heartbeat, empty stderr
+stderr-20260916-155906.log. Windows commit76.2%,15.2GiB headroom observed.
+
+Charts **http://127.0.0.1:8770/**, dashboard24684, lifecycle ALIVE verified;
+old8769 history correctly reports DEAD. Manifest, inherited settings, initial/
+optimized verification and native/process evidence reside under
+`runs/native-clear-intervention-20260916`; new run experiment.json mirrors them.
+Review target **7,867,974 decisions** (+1.2M); new run snapshot_steps.json retains
+first optimized save at/above target (max1,535 overshoot), without stopping.
+At normal full-rollout boundaries expected retained step7,869,126. Check
+milestone_archive_error and exact archived step; never silently substitute later
+weights. Primary100-seed held-out boss-win outcome and explicit falsification
+are in EXPERIMENT-NATIVE-CLEAR-20260916.md. No scheduled evaluator or restart.
+
+Prior observability comparison is complete,200/200 episodes, **zero/100 boss
+wins both arms**. Original result.json guard remains byte-identical; strict
+living-clear22->33 vs post-hoc native-clear24->37 has broad intervals and late
+checkpoint exposure. Original fixed-budget verdict unassessable. Independent
+audit splits14 disagreements into7 false bonuses and7 conservative exclusions.
+Reserved native13848/1789565921.170414 remains parked; comparison34416 is dead
+and10002 free. Do not mistake reserved3 for a learner worker. Goal unproven.
+
 ## CURRENT: September 16, 15:58 Toronto — reward handover APPROVED, preparing final save
 
 User explicitly approved ONE handover for the combat-clear reward correction:

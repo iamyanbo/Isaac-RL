@@ -86,3 +86,30 @@ and verifies actual initial/optimized checkpoints without controlling any game.
 Runtime metadata, exact final baseline hash, process identities and first optimizer
 progress are recorded in `runs/native-clear-intervention-20260916` and the current
 OPERATIONS.md section. See the activation addendum after the switch completes.
+
+## Activation completed — September 16, 16:01 Toronto
+
+Parent learner30608 exited0/cleanup complete at **6,667,974 steps,6,232 updates,
+16,784,992 counted native ticks**. Final SHA256
+**a1295f92033ebd3bff8a8106e81482f5afda12e93388907dac31e17c80f20621**;
+old latest.pt, intervention parent-final.pt and new parent.pt are byte-identical.
+No rollback to the preparation baseline6,636,588 or any earlier model.
+
+New learner **37144 /1789588746.8131385**, session-1789588750943756600,
+reuses all six native game identities. Exact initial model/Adam/RNG inheritance
+verified in initial-verification.json. All recorded configuration constants
+match; there is no observation, optimization, timing, curriculum or worker change.
+Initial checkpoint SHA256
+**d16d13b0b8f72d86ce1e96a0afe8915bfbefe57b2c8fc74da78a168b86dcddd8**.
+
+First optimized checkpoint **6,669,510 steps /6,233 updates /16,791,129 ticks**,
+SHA256 **da2fe7f78b5ab3f4d2ce31862e6839db8a268a28b7cb8df179710feb21f2103e**,
+has finite changes in all16 tensors and unchanged optimizer groups/settings.
+Collection38.8427s, PPO1.1237s; second update6,671,046 also completed.
+Six established learner-owned sockets and empty stderr confirmed. These verify
+actual learning execution, not competence. No evaluation was launched.
+
+Actual retention target **7,867,974**, expected next full-rollout save7,869,126
+(+1,201,152 decisions). `snapshot_steps.json` and experiment manifests written
+before launch. Charts http://127.0.0.1:8770/; old8769 displays DEAD history.
+Implementation commit **f15388a**. Approval consumed; no automatic restart/stop.
