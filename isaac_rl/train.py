@@ -16,7 +16,7 @@ from .env import IsaacEnv
 from .ppo import load_policy, as_tensor, optimize, resolve_entropy_coef
 from .observation import OBSERVATION_PROFILES, resolve_observation_profile
 from .rewards import PROFILES, profile_manifest
-from .storage import atomic_json, checkpoint, source_fingerprint, capture_failure_states
+from .storage import atomic_json, checkpoint, source_fingerprint, capture_failure_states, retain_review_checkpoints
 from .runtime import RunLease, measure
 from .timing import TIMING_PROFILES, configure_training
 
@@ -142,6 +142,7 @@ def run_training(args):
             reward=profile_manifest(args.reward_profile,control),created=time.time()))
         atomic_json(run/"training_seeds.json",sorted(training_seeds))
         status["checkpoint_steps"] = steps
+        status.update(retain_review_checkpoints(run,steps))
     try:
         obs,info = env.reset()
         training_seeds.add(info["game_seed"])

@@ -47,7 +47,9 @@ class IsaacEnv(gym.Env):
         self.cells = Counter()
         self.room_ids = {self.state["room"]["id"]}
         self.clear_ids = {int(k) for k,v in self.state["cleared"].items() if v}
-        self.combat_rooms = {self.state["room"]["id"]} if self.state["room"]["enemies"] else set()
+        room = self.state["room"]
+        qualifying_combat = room["enemies"] > 0 and (not self.reward_config.require_uncleared_combat or not room["clear"])
+        self.combat_rooms = {room["id"]} if qualifying_combat else set()
         self.combat_clear_ids = set()
         self.combat_clear_alive_ids = set()
         self.steps, self.episode_reward, self.idle = 0,0.0,0
@@ -88,7 +90,7 @@ class IsaacEnv(gym.Env):
         count = self._visit(after)
         new_room = after["room"]["id"] not in self.room_ids
         new_clear = after["room"]["clear"] and after["room"]["id"] not in self.clear_ids
-        if after["room"]["enemies"] > 0:
+        if after["room"]["enemies"] > 0 and (not self.reward_config.require_uncleared_combat or not after["room"]["clear"]):
             self.combat_rooms.add(after["room"]["id"])
         new_combat_clear = new_clear and after["room"]["id"] in self.combat_rooms
         if new_combat_clear:

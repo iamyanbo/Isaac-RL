@@ -22,6 +22,7 @@ class RewardProfile:
     combat_clear_only: bool = False
     cell_resets_idle: bool = True
     damage_signal: str = "attempted_v1"
+    require_uncleared_combat: bool = False
 
 
 PROFILES = {
@@ -36,6 +37,10 @@ PROFILES["confirmed_v3"] = replace(PROFILES["balanced_v2"],damage_signal="hp_del
 # exploration and timing terms identical. This is NOT a potential-based reward
 # or a claim that all remaining shaping preserves the boss-win objective.
 PROFILES["completion_v4"] = replace(PROFILES["confirmed_v3"],damage=0.0,kill=0.0)
+# Qualify a combat-room completion using observed native uncleared history.
+# Already-cleared rooms can contain active, nonblocking NPCs (e.g. wall huggers).
+# Entering one is not a combat clear. Coefficients and all other terms stay fixed.
+PROFILES["native_clear_v5"] = replace(PROFILES["completion_v4"],require_uncleared_combat=True)
 
 
 def profile_manifest(name, control=None):

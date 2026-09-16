@@ -14,7 +14,7 @@ import torch
 
 from .ppo import load_policy, optimize, resolve_entropy_coef
 from .observation import OBSERVATION_PROFILES, resolve_observation_profile
-from .storage import atomic_json, checkpoint, load_snapshot, source_fingerprint, capture_failure_states
+from .storage import atomic_json, checkpoint, load_snapshot, source_fingerprint, capture_failure_states, retain_review_checkpoints
 from .rewards import PROFILES, profile_manifest
 from .vector import ParallelIsaac
 from .runtime import RunLease, measure, commit_memory
@@ -159,6 +159,8 @@ def run_training(args):
         # taking a game port, or unbounded raw training traces.
         atomic_json(run/"live-states.json",[env.state for env in collector.envs])
         status["checkpoint_steps"] = steps
+        if path is None:
+            status.update(retain_review_checkpoints(run,steps))
     def tensor(obs):
         return {key:torch.as_tensor(value,device=args.device) for key,value in obs.items()}
     try:

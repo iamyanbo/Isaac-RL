@@ -1,5 +1,27 @@
 # Current handoff — 2026-09-16
 
+## CURRENT: September 16, 15:58 Toronto — reward handover APPROVED, preparing final save
+
+User explicitly approved ONE handover for the combat-clear reward correction:
+save learner30608's FINAL checkpoint, preserve identical bytes, then fork
+`runs/ppo-native-clear-v9` with native_clear_v5 and the same six workers.
+This is NEW approval, not reuse of the consumed enriched-history approval.
+Until the stop request is issued, learner30608/session-1789528914816534000 is
+still training ppo-observability-v8. Exact learner/native identities below are
+verified live. Reuse all six games; no Lua changes, Steam actions or save changes.
+Only learning change is combat qualification requiring observed native uncleared
+history. All settings/observations/architecture/Adam/RNG/control stay fixed.
+175 tests pass and131,829-action replay changes exactly seven erroneous bonuses.
+Checkpoint retention is operational only. Experiment: EXPERIMENT-NATIVE-CLEAR-20260916.md.
+
+Frozen comparison34416 has FINISHED,200/200 episodes, exit0/cleanup complete;
+its process is absent and10002 free. Both policies0/100 boss wins. Fourteen
+counter disagreements were independently audited: seven false room-entry rewards
+and seven real clears excluded by zero-NPC evidence. Original guarded result
+remains unchanged; late-review fixed-budget verdict is not assessable.
+Reserved game13848/1789565921.170414 remains parked, not training; do not confuse
+it with the six learner workers. No new evaluation or automatic restart policy.
+
 ## CURRENT: September 16, 09:40 Toronto — six-worker training LIVE; frozen comparison LIVE
 
 Training remains **learner30608 / creation1789528910.5677547**, session
