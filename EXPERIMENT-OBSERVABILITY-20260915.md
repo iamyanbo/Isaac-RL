@@ -19,6 +19,11 @@ raw response was not saved. A reserved native fixture reproduces the same error.
 The association repair below changes no feature widths or learning settings,
 and does not restart the experiment's exposure budget. New exception capture
 retains current raw native states separately from the last optimized checkpoint.
+Recovery commit **a3f0aa3** resumed the same six-worker run from4,406,316, with
+byte-identical model/Adam/RNG inheritance verified. Learner30608's first actual
+new update4760 reached4,407,852. 156 tests and16 native smoke checks pass. This
+does not establish improved play; zero wins were recorded in581 pre-crash
+treatment episodes, and only391,680 optimized treatment decisions had elapsed.
 
 This tests whether missing short-horizon combat information is a dominant
 bottleneck. It does not assert that the entire game becomes Markov, or that a
@@ -163,6 +168,9 @@ normal full-floor seeds**, one stochastic episode per policy/seed with a fixed
 per-seed action RNG initialization. Seeds must be absent from the union of both
 training-seed sets. Use the same four-tick hold, normal Isaac, episode/idle budgets
 and no gameplay assistance. Preserve native traces and room-clear evidence.
+Also exclude observed seeds from uncheckpointed crash-tail logs, preserved in
+`runs/identity-recovery-20260915-2303/observed-training-seeds.json`. Recovery does
+not reset the review threshold5,214,636 or discard those seeds/logged episodes.
 
 Primary mechanism outcome: probability of completing **at least one combat room
 alive** during a full-floor episode, including every requested seed in the

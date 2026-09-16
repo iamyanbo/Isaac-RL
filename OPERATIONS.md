@@ -1,5 +1,71 @@
 # Current handoff — 2026-09-15
 
+## CURRENT: September 15, 23:27 Toronto — recovered six-worker learner LIVE
+
+**Learner30608 / creation1789528910.5677547**, session
+**session-1789528914816534000**, trains `runs/ppo-observability-v8`, uncapped,
+CPU/two Torch threads, instances0/1/2/4/5/6 on9999/10000/10001/10003/10004/10005.
+**Preserve live training. No new stop or automatic restart authority.** This
+manual goal resume found learner2152 genuinely terminal; repair/recovery did not
+stop a live learner. Older LIVE/recovery-preparation sections below are historical.
+
+Repair commit **a3f0aa3** replaces nonunique InitSeed observation association
+with entity-lifetime GetData track_id. Bridge **0.1.6/combat_v2**, SHA256
+**f9d28a8eb4c18267c62c2601984fc6908ce8e121615ee78d45470474c8894c76**.
+All six new initial native states confirmed schema/version/normal Isaac/floor1.
+Only metadata changes in config: observation_layout, origin and source_hashes.
+No changes to input shape, learned weights, optimizer, reward, entropy, timing,
+rollout/episode/idle schedules or six-worker count. No new learning intervention.
+
+Byte-identical recovery checkpoint **4,406,316 decisions / 4,759 updates /
+7,741,857 counted native ticks**, preserved under
+`runs/identity-recovery-20260915-2303/checkpoint.pt`, SHA256
+**e97537991fadc3d7c2e3d2ef232f5281df3aa85bfa516ef9cd7729ecbf3cd3be**.
+Parent-final4,014,636 and original5,377,722 control checkpoints remain intact;
+their SHA256 values were reverified. No rollback to an older baseline.
+Resumed-initial snapshot **722e18d281dd4973cc37ee93fb09f0844b365b091ce8d8e4de2c7bf4312202cc**
+matches model/Adam/RNG/counters/recent/loss/settings exactly. Training seed set
+only adds the six fresh initial seeds. Current source hashes match. Metadata
+upgrade accepts only the exact old architecture2 manifest, not arbitrary layouts.
+
+First actual new update **4760 / 4,407,852 decisions / 7,748,001 native ticks**:
+collection38.1404s, PPO1.5533s, wall41.9117s,36.6485 aggregate decisions/s. CPU
+remains appropriate. Archived first-observed-optimized.pt is the SECOND update
+4761 /4,409,388 /7,754,142, SHA256
+**15b0cc7ec6d217ce3e20630805934ba2b5e6e67135032725c48ce0cc308a8f3d**.
+All16 parameter tensors changed and remain finite; settings/Adam groups unchanged.
+Update4763/4,412,460 also completed; six established sockets owned30608 and
+dashboard8769 lifecycle ALIVE verified. New stderr232150 is empty. Windows
+commit observed61–62%,24GiB available; not a guarantee against long-run leaks.
+
+Native identities:0=19508/1789528905.762303;1=17580/1789528905.833454;
+2=31784/1789528905.846059;4=6852/1789528905.8606613;
+5=38476/1789528905.8764212;6=7680/1789528905.8921103.
+Existing private executable hashes verified; only bridge main/metadata replaced.
+Instance0 had already exited with a clean shutdown log before scoped cleanup
+(cause unknown). The other five old games and reserved probe35996 received
+exact-identity WM_CLOSE and exited0. Probe fixture moved to recoverable
+deactivated-native-fixture outside runtime. Reserved3 STOPPED; no training
+fixture, personal-save changes, Steam changes or game resource recopy.
+
+**156 tests pass**, including both real trainer migration paths; native fixture
+passes16 checks. Six native snapshots reproduce the original validator error;
+25 collision-free four-history inputs match the archived encoder bit-for-bit.
+Actual historical crash entity remains unknown. Future exceptions now save raw
+failure states without overwriting the optimized checkpoint. Damage accounting
+still uses seed keys and is a separately documented debt, not changed here.
+
+Before the crash:581 logged treatment episodes, zero boss wins,6 boss encounters,
+174 episodes with at least one living combat clear (203 total). These are not
+held-out evidence. Only391,680 optimized treatment decisions had completed,
+32.64% of the1.2M budget; no intervention verdict yet. Review threshold remains
+**5,214,636 cumulative decisions**, not reset by recovery. Future held-out seed
+selection must exclude both checkpoints' sets AND recovery's
+observed-training-seeds.json (uncheckpointed crash tail). Logged episode counters
+can overlap after recovery; distinguish session_id. Manifest/experiment metadata
+record this. Charts **http://127.0.0.1:8769/**, dashboard33564; old8768 is baseline
+history. This turn made actual training PROGRESS. Goal competence unproven. PAUSE.
+
 ## CURRENT: September 15, 23:20 Toronto — identity crash repair; recovery in progress
 
 Prior learner2152/session-1789512773700976500 is TERMINAL, error/exit1 and

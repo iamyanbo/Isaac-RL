@@ -8,15 +8,19 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ### Current training — enriched history, September 15
 
-**Live: `runs/ppo-observability-v8`, learner2152, six workers, CPU, four ticks/action.**
+**Live: `runs/ppo-observability-v8`, learner30608, six workers, CPU, four ticks/action.**
 `combat_history_v3` adds native combat fields and four snapshots with intervening
 actions. Input widening preserves the parent's initial policy and Adam state.
 The approved handover is complete, using the **final4,014,636-step checkpoint**,
 preserved byte-for-byte. The first real PPO update completed at4,016,172; finite
 changed weights and gradients into new inputs are verified. All other learning
-settings remain unchanged. **142 tests and native smoke checks pass**. A startup
-bomb-field error was corrected before the first optimizer update; bridge0.1.5
-exports actual bomb age, not an unavailable fuse countdown. See the
+settings remain unchanged. **156 tests and native smoke checks pass**. Bridge0.1.6
+exports actual bomb age, not an unavailable fuse countdown, and stable entity
+lifetime IDs: InitSeed is not unique. After an identity validation crash, the
+manually resumed goal recovered the saved **4,406,316-step checkpoint** with exact
+model/Adam/RNG inheritance. First new optimizer update4760 reached4,407,852;
+input shapes and all learning settings are unchanged. Crash evidence and the
+byte-identical checkpoint are in `runs/identity-recovery-20260915-2303`. See the
 [observability experiment](EXPERIMENT-OBSERVABILITY-20260915.md) for the exact
 change, unchanged settings, evidence and predeclared falsification condition.
 
