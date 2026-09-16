@@ -16,7 +16,7 @@ from .env import IsaacEnv
 from .ppo import load_policy, as_tensor, optimize, resolve_entropy_coef
 from .observation import OBSERVATION_PROFILES, resolve_observation_profile
 from .rewards import PROFILES, profile_manifest
-from .storage import atomic_json, checkpoint, source_fingerprint
+from .storage import atomic_json, checkpoint, source_fingerprint, capture_failure_states
 from .runtime import RunLease, measure
 from .timing import TIMING_PROFILES, configure_training
 
@@ -205,7 +205,8 @@ def run_training(args):
             update_status(status="stopped",exit_code=0,exit_reason="stop_requested" if stop_requested else "step_budget",
                 message="Checkpoint saved; closing bridge and exiting this learner session")
     except Exception as exc:
-        update_status(status="error",exit_code=1,exit_reason="exception",message=f"{type(exc).__name__}: {exc}")
+        evidence = capture_failure_states(run/f"{session_name}-failure-states.json",[env])
+        update_status(status="error",exit_code=1,exit_reason="exception",message=f"{type(exc).__name__}: {exc}",**evidence)
         raise
     finally:
         try:

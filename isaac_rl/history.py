@@ -25,8 +25,8 @@ def squash(value, scale):
 
 
 def validate(state):
-    if state.get("combat_schema") != "combat_v1":
-        raise BridgeError("combat_history_v3 requires native combat_v1 (bridge 0.1.5); do not silently pad missing fields")
+    if state.get("combat_schema") != "combat_v2":
+        raise BridgeError("combat_history_v3 requires native combat_v2 (bridge 0.1.6); do not silently pad missing fields")
     try:
         player = state["combat_player"]
         for key in ("size","size_multi","fire_cooldown","damage_cooldown_render_frames",
@@ -36,9 +36,14 @@ def validate(state):
             raise ValueError("entity sidecar length mismatch")
         seen = set()
         for entity, extra in zip(state["entities"],state["combat_entities"]):
-            if entity[11] != extra["id"] or entity[11] in seen:
-                raise ValueError("entity identity mismatch or duplicate")
-            seen.add(entity[11])
+            if entity[11] != extra["id"]:
+                raise ValueError("entity seed/sidecar identity mismatch")
+            identity = extra["track_id"]
+            if type(identity) is not int or identity < 1:
+                raise ValueError("entity track_id must be a positive integer")
+            if identity in seen:
+                raise ValueError("duplicate entity track_id")
+            seen.add(identity)
             for key in ("size_multi","collision","collision_damage"):
                 extra[key]
             keys = {1:("npc_state","state_frame","animation_frame"),
@@ -49,7 +54,7 @@ def validate(state):
             if entity[4] == 7 and extra["geometry_valid"] and len(extra["samples"]) != min(extra["sample_count"],8):
                 raise ValueError("incomplete laser samples")
     except (KeyError,IndexError,TypeError,ValueError) as error:
-        raise BridgeError(f"Invalid combat_v1 state: {error}") from error
+        raise BridgeError(f"Invalid combat_v2 state: {error}") from error
 
 
 def segment_distance(p, a, b):
@@ -104,14 +109,15 @@ class ObservationHistory:
         current = self.frames[0]["state"]
         for frame in self.frames:
             s = frame["state"]
-            mapping = {e[11]:(e,x) for e,x in zip(s["entities"],s["combat_entities"])}
+            mapping = {x["track_id"]:(e,x) for e,x in zip(s["entities"],s["combat_entities"])}
             maps.append(mapping)
             for label,kinds,limit in (("enemies",(1,),ENEMIES),("hazards",(2,4,7),HAZARDS)):
                 candidates = [(e,x) for e,x in mapping.values() if e[4] in kinds]
-                candidates.sort(key=lambda pair:(threat_distance(*pair,current["player"]),pair[0][11]))
-                for e,_ in candidates:
-                    if e[11] not in tracks[label] and len(tracks[label]) < limit:
-                        tracks[label].append(e[11])
+                # Retain the original tie-break for collision-free seeds.
+                candidates.sort(key=lambda pair:(threat_distance(*pair,current["player"]),pair[0][11],pair[1]["track_id"]))
+                for e,x in candidates:
+                    if x["track_id"] not in tracks[label] and len(tracks[label]) < limit:
+                        tracks[label].append(x["track_id"])
         grid = np.zeros((HISTORY*CHANNELS,HEIGHT,WIDTH),np.float32)
         vector = np.zeros(HISTORY_VECTOR_SIZE,np.float32)
         frame_vectors = vector[:HISTORY*FRAME_VECTOR_SIZE].reshape(HISTORY,FRAME_VECTOR_SIZE)
@@ -139,6 +145,8 @@ class ObservationHistory:
                     if identity not in mapping:
                         continue
                     e,x = mapping[identity]
+                    if (label == "enemies" and e[4] != 1) or (label == "hazards" and e[4] not in (2,4,7)):
+                        continue  # Native morphs must not read another kind's sidecar fields.
                     common = [1,*relative(e[0],e[1]),squash(e[2],15),squash(e[3],15),
                         squash(e[10],50),*[squash(v,2) for v in x["size_multi"]]]
                     category = [squash(e[5],1000),squash(e[6],100),squash(e[7],100)]

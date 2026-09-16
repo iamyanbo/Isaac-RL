@@ -41,7 +41,15 @@ def main():
                 break
         players = [s["combat_player"] for s in states]
         hazards = [(e,x) for s in states for e,x in zip(s["entities"],s["combat_entities"])]
+        shared = [[(e,x) for e,x in zip(s["entities"],s["combat_entities"])
+                   if e[4]==2 and e[11]==581234] for s in states]
+        stable = {variant:{x["track_id"] for frame in shared for e,x in frame if e[6]==variant}
+                  for variant in (0,4)}
         checks = dict(native_four_tick_hold=all(b["episode_frame"]-a["episode_frame"] == 4 for a,b in zip(states,states[1:])),
+            duplicate_native_seeds_observed=sum(len(frame)==2 for frame in shared)>=2,
+            shared_seed_tracks_distinct=any(len(frame)==2 and len({x["track_id"] for e,x in frame})==2 for frame in shared),
+            lifetime_tracks_stable=all(len(ids)==1 for ids in stable.values()),
+            all_native_tracks_unique=all(len({x["track_id"] for x in s["combat_entities"]})==len(s["entities"]) for s in states),
             current_firing_cooldown_changes=len({p["fire_cooldown"] for p in players})>1,
             damage_cooldown_observed=any(p["damage_cooldown_render_frames"]>0 for p in players),
             invulnerability_observed=any(p["invincible"] for p in players),
@@ -62,6 +70,9 @@ def main():
         print(json.dumps(result,indent=2),flush=True)
         if not result["passed"]:
             raise RuntimeError("Native schema smoke check failed")
+    except Exception:
+        atomic_json(args.output/"failure-state.json",env.state)
+        raise
     finally:
         if completed:
             park_after_evaluation(env,args.output)

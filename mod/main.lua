@@ -64,8 +64,21 @@ end
 
 -- Sidecar leaves the legacy 12-column entity wire format intact. These are
 -- current native properties, never future states or recommended controls.
+-- InitSeed is a random seed, not a unique entity identifier (spawns may share
+-- one). GetData persists across Lua wrappers for an entity's native lifetime.
+-- Do not reset this counter on room/episode changes or consume native RNG.
+local nextObservationIdentity = 0
+local function observationIdentity(e)
+    local data = e:GetData()
+    if data.__isaac_rl_observation_uid == nil then
+        nextObservationIdentity = nextObservationIdentity + 1
+        data.__isaac_rl_observation_uid = nextObservationIdentity
+    end
+    return data.__isaac_rl_observation_uid
+end
+
 local function combatEntity(e, kind)
-    local result = {id=e.InitSeed, size_multi={e.SizeMulti.X,e.SizeMulti.Y},
+    local result = {id=e.InitSeed, track_id=observationIdentity(e), size_multi={e.SizeMulti.X,e.SizeMulti.Y},
         collision=e.EntityCollisionClass, collision_damage=e.CollisionDamage}
     if kind == 1 then
         local npc = e:ToNPC()
@@ -186,7 +199,7 @@ local function snapshot()
         room={id=roomId,type=room:GetType(),clear=isClear,enemies=enemies,
             bounds={tl.X,tl.Y,br.X,br.Y},visits=visits[tostring(roomId)] or 0},
         entities=entities,doors=doors,grid=grid,
-        combat_schema="combat_v1",combat_entities=combat,
+        combat_schema="combat_v2",combat_entities=combat,
         combat_player={size=player.Size,size_multi={player.SizeMulti.X,player.SizeMulti.Y},
             fire_cooldown=player.FireDelay,damage_cooldown_render_frames=player:GetDamageCooldown(),
             invincible=player:HasInvincibility() or player:GetDamageCooldown()>0,
@@ -195,7 +208,7 @@ local function snapshot()
         events={damage_taken=damageTaken,damage_dealt=damageDealt,damage_attempted=damageAttempted,kills=kills},
         visited=visits,cleared=cleared,boss_seen=bossSeen,boss_defeated=bossDefeated,
         success=bossDefeated,terminal=player:IsDead() or bossDefeated,
-        mode="full_floor",bridge_version="0.1.5",bridge_port=PORT,damage_signal="hp_delta_v1"
+        mode="full_floor",bridge_version="0.1.6",bridge_port=PORT,damage_signal="hp_delta_v1"
     }
 end
 

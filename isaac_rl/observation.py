@@ -96,8 +96,22 @@ def observation_manifest(profile):
         from .history import HISTORY, HISTORY_VECTOR_SIZE, FRAME_VECTOR_SIZE
         return dict(profile=profile,architecture=2,channels=CHANNELS*HISTORY,
             vector_size=HISTORY_VECTOR_SIZE,history=HISTORY,frame_vector_size=FRAME_VECTOR_SIZE,
-            native_schema="combat_v1",order="newest_first",actions="three intervening executed actions, one-hot 9/5/4",
-            identity="InitSeed-aligned entity tracks within each sample; no seed values input",
+            native_schema="combat_v2",order="newest_first",actions="three intervening executed actions, one-hot 9/5/4",
+            identity="entity-lifetime track_id alignment within each sample; no ID values input",
             boundary="zero-pad and invalidate history on episode or room change",
             enemy_tracks=16,hazard_tracks=32,laser_samples=8)
     return dict(profile=profile,architecture=1,channels=CHANNELS,vector_size=VECTOR_SIZE,history=1)
+
+
+def compatible_observation_layout(layout, profile):
+    """Explicit metadata-only upgrade of the original history association bug.
+
+    No feature widths/order/meaning, model tensors or Adam state change. Accept
+    only the exact previous manifest, not arbitrary architecture-2 variants.
+    """
+    current = observation_manifest(profile)
+    if layout == current:
+        return True
+    previous = dict(current, native_schema="combat_v1",
+        identity="InitSeed-aligned entity tracks within each sample; no seed values input")
+    return profile == "combat_history_v3" and layout == previous

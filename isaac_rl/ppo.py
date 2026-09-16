@@ -7,7 +7,7 @@ import torch
 from torch import nn
 from torch.distributions import Categorical
 
-from .observation import observation_manifest, resolve_observation_profile
+from .observation import observation_manifest, resolve_observation_profile, compatible_observation_layout
 from .rewards import GAMMA
 
 
@@ -72,7 +72,7 @@ def load_policy(saved=None, device="cpu", observation_profile=None, with_optimiz
     parent = resolve_observation_profile(checkpoint=saved) if saved is not None else profile
     if saved is not None and saved["architecture"] != observation_manifest(parent)["architecture"]:
         raise ValueError("Checkpoint architecture/observation profile mismatch")
-    if saved is not None and saved["architecture"] == 2 and saved.get("observation_layout") != observation_manifest(parent):
+    if saved is not None and saved["architecture"] == 2 and not compatible_observation_layout(saved.get("observation_layout"),parent):
         raise ValueError("Checkpoint observation layout differs from this schema")
     widening = parent == "terrain_v2" and profile == "combat_history_v3"
     if saved is not None and observation_manifest(parent)["architecture"] != observation_manifest(profile)["architecture"] and not widening:

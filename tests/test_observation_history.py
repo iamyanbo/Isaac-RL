@@ -22,7 +22,7 @@ from test_core import state, FakeBridge
 
 @pytest.fixture
 def combat_state(state):
-    state["combat_schema"] = "combat_v1"
+    state["combat_schema"] = "combat_v2"
     state["combat_player"] = dict(size=10,size_multi=[1,1],fire_cooldown=3,
         damage_cooldown_render_frames=0,invincible=False,can_shoot=True,can_fly=False,collision=4)
     state["combat_entities"] = []
@@ -31,7 +31,7 @@ def combat_state(state):
 
 def entity(s, identity, x, kind=2, **changes):
     e = [x,200,4,0,kind,9 if kind == 2 else 7 if kind == 7 else 10,0,0,5,10,12,identity]
-    extra = dict(id=identity,size_multi=[1,1],collision=4,collision_damage=1,
+    extra = dict(id=identity,track_id=identity+1,size_multi=[1,1],collision=4,collision_damage=1,
         height=-10,falling_speed=0,falling_accel=0,npc_state=3,state_frame=10,animation_frame=2,
         endpoint=[500,200],angle=0,radius=30,circle=False,sample=False,timeout=60,
         samples=[[x,200],[500,200]],sample_count=2,bomb_age=10,geometry_valid=True)
@@ -321,8 +321,20 @@ def test_real_trainers_fork_and_resume_history_without_other_changes(tmp_path,mo
     assert config["observation_layout"] == observation_manifest("combat_history_v3")
     if module is train_vector:
         assert len(config["ports"]) == 6
+    # The seed-identity repair also resumes the exact original architecture-2
+    # manifest, preserving a same-profile run's recent/loss windows and RNG.
+    before_resume = deepcopy(trained)
+    before_resume["observation_layout"] = dict(before_resume["observation_layout"],native_schema="combat_v1",
+        identity="InitSeed-aligned entity tracks within each sample; no seed values input")
+    torch.save(before_resume,run/"latest.pt")
+    snapshot_count = len(snapshots)
     monkeypatch.setattr(sys,"argv",["trainer","--run",str(run),"--resume",str(run/"latest.pt"),"--steps","112",*ports])
     module.main()
+    resumed_initial = snapshots[snapshot_count]
+    for key in ("model","optimizer","torch_rng","numpy_rng","steps","updates","episodes","recent","losses",
+                "native_frames","training_schedule","control_timing","reward_profile","entropy_coef"):
+        assert_exact(resumed_initial[key],before_resume[key])
+    assert resumed_initial["observation_layout"] == observation_manifest("combat_history_v3")
     assert snapshots[-1]["observation_profile"] == "combat_history_v3"
     assert snapshots[-1]["steps"] == 112
     assert sha256(parent) == digest

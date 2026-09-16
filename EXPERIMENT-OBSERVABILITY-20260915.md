@@ -4,11 +4,21 @@
 
 One direction: `combat_history_v3`, native current-state enrichment plus four
 snapshots and their three intervening executed actions. No GRU or LSTM.
-**Activated: six-worker `runs/ppo-observability-v8`, learner2152, charts8769.**
+**Activated: six-worker `runs/ppo-observability-v8`, charts8769.**
 The user approved the one-time checkpointed handover. Parent completion-v7 is
 stopped and preserved at its final4,014,636 decisions. First optimized treatment
 update completed at4,016,172; all other learning settings remain unchanged.
 The handover approval is consumed; preserve the new live learner.
+
+September15 identity repair: learner2152 later exited at4,407,822 observed
+decisions, last optimized checkpoint4,406,316. Evidence is preserved in
+`runs/identity-recovery-20260915-2303`; see OPERATIONS.md for recovery status.
+Native entities can share InitSeed; the original uniqueness check therefore
+rejected legitimate states. Exact crash-frame entities are unknown because that
+raw response was not saved. A reserved native fixture reproduces the same error.
+The association repair below changes no feature widths or learning settings,
+and does not restart the experiment's exposure budget. New exception capture
+retains current raw native states separately from the last optimized checkpoint.
 
 This tests whether missing short-horizon combat information is a dominant
 bottleneck. It does not assert that the entire game becomes Markov, or that a
@@ -39,8 +49,8 @@ or a claim about multi-second planning.
 
 ## Exact change
 
-Native bridge 0.1.5 retains the existing 12-column entities and adds a versioned
-`combat_v1` sidecar. It exports:
+Native bridge 0.1.6 retains the existing 12-column entities and adds a versioned
+`combat_v2` sidecar (originally combat_v1/0.1.5). It exports:
 
 - Player Size/SizeMulti, current FireDelay, damage cooldown in **render frames**,
   invincibility effect and combined invulnerable flag, shooting availability,
@@ -59,8 +69,11 @@ is one-hot; Type/Variant/SubType remain separate bounded fields. Extended
 velocity encoding does not hard-clip at 15 world units/tick.
 
 Hazard selection uses distance to beam/ring geometry, not only laser origin.
-InitSeed aligns all ages of each enriched track within a sample; random seed
-numbers are not fed to the policy. Current entities have priority; spare slots
+Entity-lifetime `track_id` aligns all ages of each enriched track within a sample;
+ID numbers are not fed to the policy. A namespaced GetData value and monotonic
+counter identify each native lifetime without consuming RNG. The original
+InitSeed remains raw evidence and a distance tie-break, not a unique dictionary
+key. Current entities have priority; spare slots
 retain recently disappeared entities. Legacy prefixes retain their original
 sort semantics. Three one-hot 9/5/4 actions, four validity flags and four native
 ages accompany the history. No current-to-be-chosen action is included.
@@ -94,8 +107,18 @@ There are **no timing-unit conversions or independent hyperparameter changes**.
 Input-width growth, new zero moments and validity masks are mechanical
 requirements of the representation change. Parameter count increases from
 390,755 to 2,493,763; this is recorded rather than described as the identical
-architecture. New runs are opt-in. Old checkpoints still load their old schema;
-in-place observation changes and unsupported reverse migrations are rejected.
+architecture. New observation profiles require an explicit fork. The exact old
+architecture2 manifest is accepted for the metadata-only seed-association repair;
+all model/Adam tensors are retained bit-for-bit. Arbitrary layout changes and
+unsupported reverse migrations are rejected. Native schema1 is rejected by the
+repaired encoder; native games must reload schema2 before recovery.
+
+This is an association implementation repair, not a second learning intervention.
+The separate InitSeed-keyed damage bookkeeping is unchanged: modifying it could
+alter idle termination and metrics despite zero damage reward, and needs a
+separate audit. Historical damage counts remain unsuitable as competence evidence.
+Native API references: [entity GetData lifetime](https://wofsauge.github.io/IsaacDocs/rep/Entity.html#getdata)
+and [explicit-seed Game.Spawn](https://wofsauge.github.io/IsaacDocs/rep/Game.html#spawn).
 
 ## Preservation and activation
 
@@ -111,7 +134,7 @@ handover, preserve and fork the final current checkpoint, not this now-older
 snapshot.** Record that final SHA, decision/native-tick origin, source hashes
 and new run directory in experiment metadata. The live learner must save/exit
 cleanly; verify PID+creation time and free ports before any new listener. Only
-then update/restart the six scoped private games with bridge 0.1.5. Never install
+then update/restart the six scoped private games with the current bridge. Never install
 the test fixture in training, modify personal saves, or enable an automatic
 restart policy. Require all six native schema handshakes before the first update.
 

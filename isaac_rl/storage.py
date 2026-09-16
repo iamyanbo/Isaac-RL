@@ -45,3 +45,17 @@ def load_snapshot(path, device="cpu"):
 def source_fingerprint(root):
     return {str(path.relative_to(root)):sha256(path) for directory in ("isaac_rl","mod")
             for path in (root/directory).rglob("*") if path.suffix in (".py",".lua",".xml")}
+
+
+def capture_failure_states(path, envs):
+    """Bounded current native evidence; never replace the optimized checkpoint.
+
+    env.step assigns its raw response before observation validation, so this
+    retains a bad frame that never made it into the encoder/history/checkpoint.
+    A capture failure must not mask the original training exception.
+    """
+    try:
+        atomic_json(path,[env.state for env in envs])
+        return {"failure_states":str(path)}
+    except Exception as error:
+        return {"failure_capture_error":f"{type(error).__name__}: {error}"}

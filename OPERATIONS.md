@@ -1,5 +1,39 @@
 # Current handoff — 2026-09-15
 
+## CURRENT: September 15, 23:20 Toronto — identity crash repair; recovery in progress
+
+Prior learner2152/session-1789512773700976500 is TERMINAL, error/exit1 and
+cleanup complete at1789523412.6773946. PID absent and all six ports free were
+verified, not inferred from an old heartbeat. Exception: Invalid combat_v1
+state: entity identity mismatch or duplicate. Saved4,406,316 decisions,
+4,759 updates,7,741,857 counted native ticks; last status4,407,822. Unoptimized
+post-checkpoint collection is not counted as learned exposure. The run completed
+255 treatment updates (391,680 decisions,32.64% of the planned1.2M). Logs contain
+581 treatment episodes, zero boss wins. No held-out competence claim.
+
+Evidence: runs/identity-recovery-20260915-2303, including byte-identical checkpoint
+SHA256 e97537991fadc3d7c2e3d2ef232f5281df3aa85bfa516ef9cd7729ecbf3cd3be,
+source-before.zip (36401e7), logs/status/config and all six native logs. The
+actual failing raw frame was not retained, so its precise entity is UNKNOWN.
+Native fixture confirms separate projectiles can share InitSeed: six snapshots
+reject with the old validator. Repair assigns entity-lifetime GetData track_id;
+bridge0.1.6/combat_v2. No numeric IDs enter the policy. Ordinary collision-free
+inputs match bit-for-bit across25 native snapshots; model/Adam load exactly.
+156 tests and reserved native fixture16 checks pass. Existing dimensions,
+weights, reward, optimizer, control, schedules and six workers are unchanged.
+New failure-state capture preserves raw responses without saving partial rollout
+counters over the optimized checkpoint. No recurrent mechanism added.
+
+This manually resumed goal is recovering verified stopped training, not stopping
+a live learner or authorizing automatic restarts. Old native identities below
+will be closed only after exact PID/creation/exe checks. Reserved3 is only a
+fixture probe and must be closed/deactivated before launch. Only bridge files
+are replaced in private runtimes; do not recopy game resources, change personal
+saves, or touch Steam. Launch same run with -Resume, CPU, instances0/1/2/4/5/6,
+Steps0, dashboard8769. First review remains5,214,636 (do not reset experiment
+origin to the recovery checkpoint). Update this current section after actual
+six-worker optimizer progress is verified. No automatic stop/restart policy.
+
 ## CURRENT: September 15, 18:52 Toronto — enriched-history SIX-WORKER training LIVE
 
 **Learner2152 / creation1789512768.613361**, session

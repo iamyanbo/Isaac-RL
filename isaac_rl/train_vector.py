@@ -14,7 +14,7 @@ import torch
 
 from .ppo import load_policy, optimize, resolve_entropy_coef
 from .observation import OBSERVATION_PROFILES, resolve_observation_profile
-from .storage import atomic_json, checkpoint, load_snapshot, source_fingerprint
+from .storage import atomic_json, checkpoint, load_snapshot, source_fingerprint, capture_failure_states
 from .rewards import PROFILES, profile_manifest
 from .vector import ParallelIsaac
 from .runtime import RunLease, measure, commit_memory
@@ -243,7 +243,8 @@ def run_training(args):
             report(status="stopped",exit_code=0,exit_reason="stop_requested" if stop_requested else "step_budget",
                 message="Checkpoint saved; closing bridges and exiting this learner session")
     except Exception as error:
-        report(status="error",exit_code=1,exit_reason="exception",message=f"{type(error).__name__}: {error}")
+        evidence = capture_failure_states(run/f"{session_name}-failure-states.json",collector.envs)
+        report(status="error",exit_code=1,exit_reason="exception",message=f"{type(error).__name__}: {error}",**evidence)
         raise
     finally:
         try:
