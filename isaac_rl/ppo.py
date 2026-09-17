@@ -14,6 +14,15 @@ from .rewards import GAMMA
 DEFAULT_ENTROPY_COEF = 0.02
 
 
+def action_statistics(logits, values, actions=None, deterministic=False):
+    distributions = [Categorical(logits=part) for part in logits.split([9,5,4],dim=-1)]
+    if actions is None:
+        actions = torch.stack([d.probs.argmax(-1) if deterministic else d.sample() for d in distributions],dim=-1)
+    log_prob = torch.stack([d.log_prob(actions[...,i]) for i,d in enumerate(distributions)],dim=-1).sum(-1)
+    entropy = torch.stack([d.entropy() for d in distributions],dim=-1).sum(-1)
+    return actions,log_prob,entropy,values
+
+
 def resolve_entropy_coef(requested=None, checkpoint=None, existing_run=False):
     """Old checkpoints retain their original coefficient; forks opt in explicitly."""
     parent = checkpoint.get("entropy_coef", DEFAULT_ENTROPY_COEF) if checkpoint is not None else DEFAULT_ENTROPY_COEF
@@ -53,12 +62,7 @@ class ActorCritic(nn.Module):
 
     def act(self, obs, actions=None, deterministic=False):
         logits,values = self(obs)
-        distributions = [Categorical(logits=part) for part in logits.split([9,5,4],dim=-1)]
-        if actions is None:
-            actions = torch.stack([d.probs.argmax(-1) if deterministic else d.sample() for d in distributions],dim=-1)
-        log_prob = torch.stack([d.log_prob(actions[:,i]) for i,d in enumerate(distributions)],dim=-1).sum(-1)
-        entropy = torch.stack([d.entropy() for d in distributions],dim=-1).sum(-1)
-        return actions,log_prob,entropy,values
+        return action_statistics(logits,values,actions,deterministic)
 
 
 def load_policy(saved=None, device="cpu", observation_profile=None, with_optimizer=False):
@@ -70,6 +74,9 @@ def load_policy(saved=None, device="cpu", observation_profile=None, with_optimiz
     """
     profile = resolve_observation_profile(observation_profile,saved)
     parent = resolve_observation_profile(checkpoint=saved) if saved is not None else profile
+    if profile == "combat_gru_v4":
+        from .recurrent import load_recurrent_policy
+        return load_recurrent_policy(saved,device,with_optimizer)
     if saved is not None and saved["architecture"] != observation_manifest(parent)["architecture"]:
         raise ValueError("Checkpoint architecture/observation profile mismatch")
     if saved is not None and saved["architecture"] == 2 and not compatible_observation_layout(saved.get("observation_layout"),parent):
@@ -129,6 +136,9 @@ def compute_gae(rewards, values, next_values, terminated, ended, gamma=GAMMA, la
 
 def optimize(model, optimizer, rollout, device="cpu", epochs=4, batch_size=64,
              clip=0.2, entropy_coef=DEFAULT_ENTROPY_COEF, target_kl=0.025, gamma=GAMMA, lam=0.95):
+    if getattr(model,"recurrent",False):
+        from .recurrent import optimize_recurrent
+        return optimize_recurrent(model,optimizer,rollout,device,epochs,batch_size,clip,entropy_coef,target_kl,gamma,lam)
     entropy_coef = resolve_entropy_coef(entropy_coef)
     advantages,returns = compute_gae(rollout["rewards"],rollout["values"],rollout["next_values"],
                                     rollout["terminated"],rollout["ended"],gamma=gamma,lam=lam)

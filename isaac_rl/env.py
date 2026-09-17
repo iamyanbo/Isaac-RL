@@ -5,7 +5,7 @@ import numpy as np
 
 from .bridge import Bridge, BridgeError
 from .observation import HEIGHT, WIDTH, encode, resolve_observation_profile, observation_manifest
-from .history import ObservationHistory
+from .history import ObservationHistory, ObservationCurrent
 from .rewards import PROFILES, door_potential
 from .timing import ControlTiming, NATIVE_HZ, REFERENCE_FRAMES
 
@@ -23,6 +23,8 @@ class IsaacEnv(gym.Env):
         self.action_space = gym.spaces.MultiDiscrete([9,5,4])
         layout = observation_manifest(self.observation_profile)
         self.history = ObservationHistory() if self.observation_profile == "combat_history_v3" else None
+        if self.observation_profile == "combat_gru_v4":
+            self.history = ObservationCurrent()
         self.observation_space = gym.spaces.Dict({
             "grid":gym.spaces.Box(0,1,(layout["channels"],HEIGHT,WIDTH),np.float32),
             "vector":gym.spaces.Box(-1,1,(layout["vector_size"],),np.float32),

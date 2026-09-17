@@ -15,6 +15,7 @@ from .storage import atomic_json, load_snapshot, source_fingerprint
 from .rewards import profile_manifest
 from .analyze import distribution_summary
 from .timing import configure_evaluation
+from .recurrent import PolicyMemory
 
 
 def canonical_seed(seed):
@@ -113,9 +114,10 @@ def main():
                     continue
                 forbidden.add(canonical_seed(info["game_seed"]))
                 initial = env.state
+                memory = PolicyMemory(model,1)
                 while True:
                     with torch.inference_mode():
-                        action,_,_,_ = model.act(as_tensor(obs,args.device),deterministic=not args.stochastic)
+                        action,_,_,_ = memory.act(as_tensor(obs,args.device),deterministic=not args.stochastic)
                     obs,_,terminated,truncated,info = env.step(action[0].cpu().numpy())
                     if terminated or truncated:
                         record = dict(time=time.time(),episode=len(records)+1,**info["episode"])

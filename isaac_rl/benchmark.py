@@ -19,6 +19,7 @@ from .timing import checkpoint_timing
 from .storage import atomic_json, load_snapshot, source_fingerprint
 from .vector import ParallelIsaac
 from .runtime import commit_memory
+from .recurrent import PolicyMemory
 
 
 def sync(device):
@@ -50,6 +51,8 @@ def collect(saved, ports, length):
     collector = ParallelIsaac(ports, saved["frames"],schedule.get("max_episode_steps",control.steps(3375)),
         schedule.get("idle_limit",control.steps(450)),saved["reward_profile"], saved["observation_profile"],control.profile)
     rollout = {key:[] for key in ("obs","actions","log_probs","values","rewards","next_values","terminated","ended")}
+    memory = PolicyMemory(model,len(ports))
+    if memory.recurrent: rollout.update(hidden_states=[],episode_starts=[])
     timing = dict(collection_s=0., inference_s=0., reset_s=0.)
     completed = []
     samples = []
@@ -62,8 +65,9 @@ def collect(saved, ports, length):
         started = time.perf_counter()
         for i in range(length):
             t = time.perf_counter()
+            memory_state = memory.rollout_state()
             with torch.no_grad():
-                actions, logs, _, values = model.act({k:torch.as_tensor(v) for k,v in obs.items()})
+                actions, logs, _, values = memory.act({k:torch.as_tensor(v) for k,v in obs.items()})
             timing["inference_s"] += time.perf_counter()-t
             t = time.perf_counter()
             next_obs, rewards, terminated, truncated, infos = collector.step(actions.numpy())
@@ -71,11 +75,11 @@ def collect(saved, ports, length):
             ended = terminated | truncated
             t = time.perf_counter()
             with torch.no_grad():
-                next_values = model({k:torch.as_tensor(v) for k,v in next_obs.items()})[1].numpy()
+                next_values = memory.value({k:torch.as_tensor(v) for k,v in next_obs.items()}).numpy()
             timing["inference_s"] += time.perf_counter()-t
             next_values[terminated] = 0
             transition = dict(obs=obs, actions=actions.numpy(), log_probs=logs.numpy(), values=values.numpy(),
-                rewards=rewards, next_values=next_values, terminated=terminated, ended=ended)
+                rewards=rewards, next_values=next_values, terminated=terminated, ended=ended,**memory_state)
             for key,value in transition.items():
                 rollout[key].append(value)
             completed.extend(infos[j]["episode"] for j in np.flatnonzero(ended))
@@ -83,6 +87,7 @@ def collect(saved, ports, length):
             collector.reset_done(next_obs, ended)
             timing["reset_s"] += time.perf_counter()-t
             obs = next_obs
+            memory.reset_done(ended)
             if (i+1) % 16 == 0:
                 samples.append(psutil.cpu_percent())
         timing["wall_s"] = time.perf_counter()-started
@@ -125,10 +130,11 @@ def update_benchmark(saved, rollout, repeats, devices=None):
                 del model, optimizer
             model, unused_optimizer = model_pair(saved,device)
             del unused_optimizer
+            memory = PolicyMemory(model,len(rollout["actions"][0]))
             def infer():
                 with torch.no_grad():
                     obs = {k:torch.as_tensor(v,device=device) for k,v in rollout["obs"][0].items()}
-                    a,lp,_,v = model.act(obs)
+                    a,lp,_,v = memory.act(obs)
                     # Include the production transfers back to the host.
                     return a.cpu().numpy(),lp.cpu().numpy(),v.cpu().numpy()
             for _ in range(5):

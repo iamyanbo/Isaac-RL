@@ -6,7 +6,7 @@ import numpy as np
 
 CHANNELS, HEIGHT, WIDTH = 10, 16, 28
 VECTOR_SIZE = 24 + 8 * 8 + 16 * 10 + 16 * 6 + 8 * 6
-OBSERVATION_PROFILES = ("legacy_v1","terrain_v2","combat_history_v3")
+OBSERVATION_PROFILES = ("legacy_v1","terrain_v2","combat_history_v3","combat_gru_v4")
 # Values verified against the installed game's resources/scripts/enums.lua.
 PLAYER_SOLID_COLLISIONS = frozenset((2,3,4))  # OBJECT, SOLID, WALL; not 5 (except player)
 TERRAIN_HAZARDS = frozenset((8,9,12))  # SPIKES, SPIKES_ONOFF, TNT
@@ -25,8 +25,8 @@ def resolve_observation_profile(requested=None, checkpoint=None, existing_run=Fa
 
 
 def encode(state, cells, profile="terrain_v2", visit_scale=1.0):
-    if profile == "combat_history_v3":
-        raise ValueError("combat_history_v3 requires a per-environment ObservationHistory")
+    if profile in ("combat_history_v3","combat_gru_v4"):
+        raise ValueError(f"{profile} requires a per-environment combat encoder")
     if profile not in OBSERVATION_PROFILES:
         raise ValueError(f"Unsupported observation profile: {profile}")
     grid = np.zeros((CHANNELS, HEIGHT, WIDTH), np.float32)
@@ -92,6 +92,17 @@ def encode(state, cells, profile="terrain_v2", visit_scale=1.0):
 def observation_manifest(profile):
     if profile not in OBSERVATION_PROFILES:
         raise ValueError(f"Unsupported observation profile: {profile}")
+    if profile == "combat_gru_v4":
+        from .history import FRAME_VECTOR_SIZE
+        return dict(profile=profile,architecture=3,channels=CHANNELS,
+            vector_size=FRAME_VECTOR_SIZE+19,history=1,frame_vector_size=FRAME_VECTOR_SIZE,
+            native_schema="combat_v2",actions="previous executed action one-hot 9/5/4 plus valid bit; zero at episode reset",
+            identity="current threat-distance order; no ID values input",
+            boundary="GRU memory persists across rooms; reset on episode end and process restart",
+            enemy_tracks=16,hazard_tracks=32,laser_samples=8,
+            memory=dict(kind="GRU",layers=1,hidden_size=256,residual_readout=True,
+                sampler="ordered per-environment sequences; length=min(rollout,batch_size)",
+                initial_state="detached behavior state at sequence start",padding=False))
     if profile == "combat_history_v3":
         from .history import HISTORY, HISTORY_VECTOR_SIZE, FRAME_VECTOR_SIZE
         return dict(profile=profile,architecture=2,channels=CHANNELS*HISTORY,

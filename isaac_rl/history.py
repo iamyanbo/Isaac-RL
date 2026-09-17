@@ -180,3 +180,30 @@ class ObservationHistory:
         if not np.isfinite(vector).all():
             raise BridgeError("Nonfinite combat history")
         return dict(grid=grid,vector=np.clip(vector,-1,1))
+
+
+class ObservationCurrent:
+    """Same native enrichment, ONE snapshot; temporal memory belongs to the GRU.
+
+    Reuse the validated frame encoder without retaining older frames/entities.
+    Previous executed action is the recurrent transition input, not a stack.
+    """
+    def __init__(self):
+        self.encoder = ObservationHistory()
+        self.stats = {}
+
+    def reset(self):
+        self.encoder.reset()
+        self.stats = {}
+
+    def append(self, state, cells, visit_scale, action=None):
+        self.encoder.reset()
+        current = self.encoder.append(state,cells,visit_scale)
+        vector = np.zeros(FRAME_VECTOR_SIZE+19,np.float32)
+        vector[:FRAME_VECTOR_SIZE] = current['vector'][:FRAME_VECTOR_SIZE]
+        if action is not None:
+            for value,offset in zip(action,(0,9,14)):
+                vector[FRAME_VECTOR_SIZE+offset+int(value)] = 1
+            vector[-1] = 1
+        self.stats = dict(self.encoder.stats,temporal_mechanism="GRU")
+        return dict(grid=current['grid'][:CHANNELS].copy(),vector=vector)

@@ -6,6 +6,16 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
+### Next intervention — GRU memory (implemented, awaiting handover)
+
+`combat_gru_v4` replaces finite stacking with a256-unit GRU while preserving
+native combat enrichment, rewards, action timing and PPO settings. Training uses
+ordered sequences and per-worker episode-reset memory, not shuffled timesteps.
+Current six-worker learner remains live and unchanged until a new checkpointed
+handover is approved. Unit/integration, native smoke and disposable cost checks
+pass. No claim of improved gameplay yet. See [the GRU experiment](EXPERIMENT-GRU-20260916.md)
+for checkpoint projection, constants, evidence and explicit falsification.
+
 ### Current training — native combat-clear qualification, September 16
 
 **Live: `runs/ppo-native-clear-v9`, learner37144, six workers, CPU, four ticks/action.**

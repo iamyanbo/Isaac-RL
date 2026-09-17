@@ -19,6 +19,7 @@ from .rewards import PROFILES, profile_manifest
 from .vector import ParallelIsaac
 from .runtime import RunLease, measure, commit_memory
 from .timing import TIMING_PROFILES, configure_training
+from .recurrent import PolicyMemory
 
 
 def rollout_length(steps, target, rollout, environments):
@@ -116,6 +117,7 @@ def run_training(args):
     atomic_json(run/"config.json",config)
     collector = ParallelIsaac(args.ports,args.frames,args.max_episode_steps,args.idle_limit,args.reward_profile,args.observation_profile,args.timing_profile)
     count = len(args.ports)
+    memory = PolicyMemory(model,count)
     started,initial_steps = time.time(),steps
     stop_requested = False
     def stop(*_):
@@ -180,9 +182,12 @@ def run_training(args):
                 rollout_native_start = native_frames
                 timing = {}
                 rollout = {key:[] for key in ["obs","actions","log_probs","values","rewards","next_values","terminated","ended"]}
+                if memory.recurrent:
+                    rollout.update(hidden_states=[],episode_starts=[])
                 for _ in range(length):
+                    memory_state = memory.rollout_state()
                     with measure(timing,"inference_s",args.device), torch.no_grad():
-                        actions,log_probs,_,values = model.act(tensor(obs))
+                        actions,log_probs,_,values = memory.act(tensor(obs))
                         action_array = actions.cpu().numpy()
                         log_array, value_array = log_probs.cpu().numpy(), values.cpu().numpy()
                     with measure(timing,"collection_s"):
@@ -190,11 +195,11 @@ def run_training(args):
                     ended = terminated | truncated
                     # Values come from terminal observations, BEFORE reset_done.
                     with measure(timing,"inference_s",args.device), torch.no_grad():
-                        next_values = model(tensor(next_obs))[1].cpu().numpy()
+                        next_values = memory.value(tensor(next_obs)).cpu().numpy()
                     next_values[terminated] = 0
                     transition = dict(obs=obs,actions=action_array,log_probs=log_array,
                         values=value_array,rewards=rewards,next_values=next_values,
-                        terminated=terminated,ended=ended)
+                        terminated=terminated,ended=ended,**memory_state)
                     for key,val in transition.items():
                         rollout[key].append(val)
                     steps += count
@@ -216,6 +221,7 @@ def run_training(args):
                         seeds.add(info["game_seed"])
                         infos[i] = info
                     obs = next_obs
+                    memory.reset_done(ended)
                     if len(rollout["obs"]) % 8 == 0:
                         report(infos,status="training")
                     if (run/"stop.request").exists():
@@ -232,13 +238,13 @@ def run_training(args):
                 timing["wall_s"] = time.perf_counter()-rollout_started
                 timing["overhead_s"] = max(0.,timing["wall_s"]-sum(v for k,v in timing.items() if k != "wall_s"))
                 rollout_sps = len(rollout["obs"])*count/timing["wall_s"]
-                memory = commit_memory()
+                memory_usage = commit_memory()
                 update_file.write(json.dumps(dict(time=time.time(),session_id=session_name,steps=steps,updates=updates,num_envs=count,
                     frames=args.frames,timing_profile=args.timing_profile,control_timing=control.manifest(),
                     native_frames=native_frames,native_frames_origin_steps=native_frames_origin_steps,
                     rollout_native_frames=native_frames-rollout_native_start,
-                    device=args.device,entropy_coef=args.entropy_coef,timing=timing,rollout_sps=rollout_sps,commit_memory=memory,**losses))+"\n")
-                report(infos,status="training",timing=timing,rollout_sps=rollout_sps,commit_memory=memory,**losses)
+                    device=args.device,entropy_coef=args.entropy_coef,timing=timing,rollout_sps=rollout_sps,commit_memory=memory_usage,**losses))+"\n")
+                report(infos,status="training",timing=timing,rollout_sps=rollout_sps,commit_memory=memory_usage,**losses)
                 print(f"update={updates} steps={steps} loss={losses['loss']:.5f} entropy={losses['entropy']:.3f} sps={status['sps']:.2f}",flush=True)
             save()
             atomic_json(run/f"{session_name}-interrupted-states.json",[env.state for env in collector.envs])

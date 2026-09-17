@@ -1,5 +1,47 @@
 # Current handoff — 2026-09-16
 
+## CURRENT: September 16, 23:53 Toronto — GRU implemented; existing six-worker learner preserved
+
+User selected GRU recurrence, explicitly rejecting another reward intervention.
+Implemented combat_gru_v4/architecture3: same native enrichment, one snapshot/
+previous executed action, GRU256 instead of four-frame stacking. Ordered256-step
+sequence PPO, separate worker hidden states, episode resets and terminal-value
+probes. All reward/control/optimization settings remain unchanged. See
+EXPERIMENT-GRU-20260916.md for exact projection, limitations and falsification.
+
+**NOT activated yet.** Live learner remains **37144 /1789588746.8131385**,
+session-1789588750943756600, native-clear-v9, same six workers/native identities
+and ports listed below. Actual PID+creation/command and fresh heartbeat verified;
+saved7,641,798/update6866 during this preparation and still advancing. This
+process has its original modules loaded; do not mistake new working-tree source
+for a live training change. No stop.request or production checkpoint write.
+New one-time GRU handover approval was requested asynchronously, NOT yet received
+as of this section. The consumed reward-handover approval does not authorize it.
+Preserve training; no automatic restart. Next run proposed ppo-gru-v10/charts8771.
+
+Preparation snapshot7,637,190/update6863 preserved byte-identically at
+runs/gru-intervention-20260916/preparation-baseline.pt, SHA256
+150b56fe9256e85a977f839e4d3fb02bf12c5fd5d5d70afab1f62915184579c4.
+Do NOT activate from this older snapshot: checkpoint the FINAL live learner on
+new approval. Migration drops old frame/action input columns and projects their
+Adam moments; remaining tensors/settings carry. No claim of policy equivalence
+after removing the stack. New GRU/readout moments start fresh. Same rewards.
+
+**188 tests pass**, including reward-invariance and frozen-evaluation memory
+integration regressions. Audit25 recorded native states preserves every
+current enriched field. Production-sized256x6 disposable four-epoch CPU updates
+2.849s/2.834s;38.85MiB observations+1.5MiB hidden-state storage. No trained checkpoint
+or evaluation result from these synthetic repetitions. Native smoke64 actions
+on existing reserved game13848/1789565921.170414 passes, including finite changed
+GRU weights in disposable PPO. No fixture, Lua changes, native restart, training
+port, personal save or Steam modification. Reserved game parked successfully;
+10002 released. No full-floor evaluation. Artifacts under gru-intervention-20260916.
+
+Previous goal turn was PROGRESS: authorized reward handover and verified actual
+updates. This turn implements the user-selected next mechanism; not a diagnosis-
+only turn. Boss competence remains unproven. User's unrelated untracked
+cathedral_aligned_l2.jpg is left untouched and must not be added to commits.
+
 ## CURRENT: September 16, 16:01 Toronto — corrected-clear SIX-WORKER learner LIVE
 
 **Approved one-time handover COMPLETE.** Learner **37144 / creation1789588746.8131385**,

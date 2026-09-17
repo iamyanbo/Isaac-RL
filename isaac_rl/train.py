@@ -19,6 +19,7 @@ from .rewards import PROFILES, profile_manifest
 from .storage import atomic_json, checkpoint, source_fingerprint, capture_failure_states, retain_review_checkpoints
 from .runtime import RunLease, measure
 from .timing import TIMING_PROFILES, configure_training
+from .recurrent import PolicyMemory
 
 
 def main():
@@ -71,6 +72,7 @@ def run_training(args):
                 losses = {k:v for k,v in json.loads(update_lines[-1]).items() if k not in ("time","steps","updates")}
     args.observation_profile = resolve_observation_profile(args.observation_profile,saved,(run/"status.json").exists())
     model,optimizer = load_policy(saved,args.device,args.observation_profile,with_optimizer=True)
+    memory = PolicyMemory(model,1)
     if saved is not None:
         torch.set_rng_state(saved["torch_rng"].cpu())
         np.random.set_state(saved["numpy_rng"])
@@ -153,21 +155,25 @@ def run_training(args):
                 rollout_started, timing = time.perf_counter(), {}
                 rollout_native_start = native_frames
                 rollout = {key:[] for key in ["obs","actions","log_probs","values","rewards","next_values","terminated","ended"]}
+                if memory.recurrent:
+                    rollout.update(hidden_states=[],episode_starts=[])
                 for _ in range(args.rollout if args.steps == 0 else min(args.rollout,args.steps-steps)):
+                    memory_state = memory.rollout_state()
                     with measure(timing,"inference_s",args.device), torch.no_grad():
-                        action,log_prob,_,value = model.act(as_tensor(obs,args.device))
+                        action,log_prob,_,value = memory.act(as_tensor(obs,args.device))
                         action_array = action[0].cpu().numpy()
                     with measure(timing,"collection_s"):
                         next_obs,reward,terminated,truncated,info = env.step(action_array)
                     with measure(timing,"inference_s",args.device), torch.no_grad():
-                        next_value = 0.0 if terminated else model(as_tensor(next_obs,args.device))[1].item()
+                        next_value = 0.0 if terminated else memory.value(as_tensor(next_obs,args.device)).item()
                     transition = dict(obs=obs,actions=action[0].cpu().numpy(),log_probs=log_prob.item(),values=value.item(),
-                        rewards=reward,next_values=next_value,terminated=terminated,ended=terminated or truncated)
+                        rewards=reward,next_values=next_value,terminated=terminated,ended=terminated or truncated,**memory_state)
                     for key,val in transition.items():
                         rollout[key].append(val)
                     steps += 1
                     native_frames += info.get("frame_delta",0)
                     obs = next_obs
+                    memory.reset_done([terminated or truncated])
                     if terminated or truncated:
                         episodes += 1
                         record = dict(time=time.time(),session_id=session_name,episode=episodes,steps=steps,**info["episode"])

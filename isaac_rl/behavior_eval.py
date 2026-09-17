@@ -24,6 +24,7 @@ from .env import IsaacEnv
 from .evaluate import canonical_seed, park_after_evaluation
 from .observation import resolve_observation_profile
 from .ppo import load_policy, as_tensor
+from .recurrent import PolicyMemory
 from .storage import atomic_json, load_snapshot, source_fingerprint
 from .timing import configure_evaluation
 
@@ -173,6 +174,7 @@ def run_case(env, model, arm, seed, rng_seed, pair, stream, report, repetition=0
     prefix = hashlib.sha256()
     prefix_steps, combat_reached = 0, False
     stats = BehaviorSummary()
+    memory = PolicyMemory(model,1)
     while True:
         before = env.state
         combat_reached |= before["room"]["enemies"] > 0
@@ -185,7 +187,7 @@ def run_case(env, model, arm, seed, rng_seed, pair, stream, report, repetition=0
             for key in ("grid", "vector"):
                 prefix.update(np.ascontiguousarray(obs[key]).tobytes())
         with torch.inference_mode():
-            logits, _ = model(as_tensor(obs))
+            logits, _ = memory.forward(as_tensor(obs))
             heads = [Categorical(logits=torch.zeros_like(x) if arm == "uniform_random" else x)
                      for x in logits[0].split([9, 5, 4])]
             proposed = np.array([int(d.probs.argmax()) if arm == "deterministic" else int(d.sample()) for d in heads])
