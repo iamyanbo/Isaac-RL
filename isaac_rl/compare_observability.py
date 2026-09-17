@@ -76,13 +76,59 @@ def settings(saved):
         idle_limit=args.idle_limit,reward_profile=saved["reward_profile"],timing_profile=control.profile)
 
 
-def validate_comparison(saved):
+def validate_comparison(saved, experiment="observability"):
     common = settings(saved["parent"])
     if settings(saved["treatment"]) != common:
         raise ValueError("Comparison holds, reward and episode limits must match")
-    if saved["parent"]["observation_profile"] != "terrain_v2" or saved["treatment"]["observation_profile"] != "combat_history_v3":
-        raise ValueError("Expected terrain_v2 parent and combat_history_v3 treatment")
+    profiles = tuple(saved[arm]["observation_profile"] for arm in ARMS)
+    expected = ("combat_history_v3","combat_gru_v4") if experiment == "gru" else ("terrain_v2","combat_history_v3")
+    if profiles != expected:
+        raise ValueError(f"Expected parent/treatment observation profiles {expected}")
+    if experiment == "gru":
+        if common["reward_profile"] != "native_clear_v5":
+            raise ValueError("GRU review requires the unchanged native_clear_v5 reward")
+        for key in ("reward","entropy_coef","control_timing","training_schedule","ports"):
+            if saved['parent'][key] != saved['treatment'][key]:
+                raise ValueError(f"GRU review changed a declared constant: {key}")
     return common
+
+
+class NativeGRUEvidenceEnv(NativeEvidenceEnv):
+    """GRU secondary endpoint: observed combat then native clear, alive.
+
+    Residual nonblocking NPCs do not veto native Room.IsClear. The historical
+    observability protocol and its original strict counter remain unchanged.
+    """
+    def _record_native(self, before):
+        s=self.state;room=s['room'];room_id=room['id']
+        if room['enemies']>0 and not room['clear']:
+            self.native_combat.setdefault(room_id,s)
+        if room_id in self.native_combat and room_id not in self.native_clears and room['clear'] and not s['player']['dead']:
+            self.native_clears[room_id]=dict(combat_observed=self.native_combat[room_id],before=before,after=s)
+
+
+def verify_boss_outcome(initial, final, result, seed):
+    """Audit successes AND failures against native state, not shaped counters."""
+    if not (initial['stage']==1 and initial['character']==0 and initial['difficulty']==0
+            and canonical_seed(initial['seed'])==seed and canonical_seed(final['seed'])==seed):
+        raise ValueError('Native initial conditions or seed contradict the requested episode')
+    native_win=bool(final['stage']==1 and final['room']['type']==5 and final['room']['clear']
+        and final['room']['enemies']==0 and final['boss_seen'] and final['boss_defeated']
+        and not final['player']['dead'])
+    if native_win != bool(result['success']) or (native_win and result['reason']!='boss_clear'):
+        raise ValueError('Native boss outcome disagrees with episode telemetry')
+    return native_win
+
+
+def validate_gru_budget(saved, review):
+    target=saved['parent']['steps']+1200000
+    overrun=saved['treatment']['steps']-target
+    if (review.get('target_steps')!=target or not 0<=overrun<=1535
+            or saved['treatment'].get('origin',{}).get('parent_sha256')!=review['parent_sha256']):
+        raise ValueError('GRU checkpoint does not match the predeclared origin/budget')
+    if not review.get('budget_compliant') or review.get('budget_overrun_decisions')!=overrun:
+        raise ValueError('GRU review budget metadata contradicts checkpoint counters')
+    return overrun
 
 
 def choose_seeds(env, count, forbidden, output, report):
@@ -146,11 +192,28 @@ def summarize(records, seeds, requested, budget_compliant):
         limitation="Frozen parent is not a matched additional-training control; no attribution to observability alone.")
 
 
+def summarize_gru(records, seeds, requested, budget_compliant):
+    result=summarize(records,seeds,requested,budget_compliant)
+    result.update(experiment='gru',primary='native verified living first-floor boss completion',
+        native_outcomes_valid=all(r.get('native_outcome_verified') is True for r in records),
+        comparison=None,limitation='Parent comparison includes extra training and stack removal; recurrence is not causally isolated.')
+    if result['complete'] and result['native_outcomes_valid']:
+        p,t=(result['arms'][a]['boss_success_gate'] for a in ARMS)
+        p_interval,t_interval=wilson(p['wins'],p['episodes']),wilson(t['wins'],t['episodes'])
+        upper=t_interval[1]-p_interval[0];lower=t_interval[0]-p_interval[1]
+        result['comparison']=dict(delta=t['rate']-p['rate'],conservative_95_lower=lower,
+            conservative_95_upper=upper,upper_below_meaningful_0_10=upper<.10,
+            fixed_budget_hypothesis_rejected=(upper<.10) if budget_compliant and requested==100 else None,
+            secondary_counter_disagreements=sum(not r['native_counter_agrees'] for r in records))
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--review",type=Path,required=True,help="Immutable parent.pt, treatment.pt, review.json and excluded-seeds.json")
     parser.add_argument("--output",type=Path,required=True)
     parser.add_argument("--seeds",type=int,default=100)
+    parser.add_argument("--experiment",choices=['observability','gru'],default='observability')
     args = parser.parse_args()
     if args.seeds < 1:
         parser.error("Seed count must be positive")
@@ -168,7 +231,10 @@ def main():
             raise ValueError("Nonfinite checkpoint")
         models[arm] = model.eval()
         snapshots[arm] = dict(path=str(path.resolve()),sha256=digest,steps=checkpoint["steps"])
-    common = validate_comparison(saved)
+    common = validate_comparison(saved,args.experiment)
+    if args.experiment=='gru': validate_gru_budget(saved,review)
+    env_type=NativeGRUEvidenceEnv if args.experiment=='gru' else NativeEvidenceEnv
+    summarize_results=summarize_gru if args.experiment=='gru' else summarize
     output = args.output.resolve()
     output.mkdir(parents=True,exist_ok=False)
     forbidden = set(json.loads((args.review/"excluded-seeds.json").read_text()))
@@ -180,7 +246,9 @@ def main():
         checkpoints=snapshots,seeds_requested=args.seeds,policy="stochastic",settings=common,
         per_seed_action_rng="946513 + zero-based seed index; reset for each arm",
         arm_order="alternating parent/treatment first by seed index",selection="all native seeds selected before scoring",
-        primary="at least one independently native-evidenced living combat clear; all requested seeds in denominator",
+        experiment=args.experiment,
+        primary=("native verified living first-floor boss completion; all requested seeds in denominator" if args.experiment=='gru' else
+            "at least one independently native-evidenced living combat clear; all requested seeds in denominator"),
         budget_compliant=review["budget_compliant"],budget_overrun_decisions=review["budget_overrun_decisions"],
         strict_fixed_budget_falsification_available=review["budget_compliant"],training_transitions=False,
         native_trace="trace.jsonl.gz",transition_trace="transitions.jsonl.gz",
@@ -199,7 +267,7 @@ def main():
         if hello.get("bridge_port") != 10002 or hello.get("combat_schema") != "combat_v2":
             raise RuntimeError("Reserved game needs combat_v2; do not connect a training game")
         for arm in ARMS:
-            envs[arm] = NativeEvidenceEnv(bridge,observation_profile=saved[arm]["observation_profile"],**common)
+            envs[arm] = env_type(bridge,observation_profile=saved[arm]["observation_profile"],**common)
             envs[arm].connected = True  # Exactly one shared native socket; sequential episodes only.
         seeds = choose_seeds(envs["parent"],args.seeds,forbidden,output,report)
         with gzip.open(output/"transitions.jsonl.gz","at",encoding="utf-8",compresslevel=1) as transitions, (output/"episodes.jsonl").open("x",buffering=1) as log:
@@ -214,12 +282,15 @@ def main():
                         TaggedTransitions(transitions,arm),case_report)
                     result.update(arm=arm,native_combat_clears_alive=len(env.native_clears),
                         native_counter_agrees=len(env.native_clears)==result["combat_clears_alive"])
+                    if args.experiment=='gru':
+                        result['native_boss_win']=verify_boss_outcome(env.initial,env.state,result,seed)
+                        result['native_outcome_verified']=True
                     atomic_json(output/f"pair-{index:03d}-{arm}.json",dict(result=result,
                         initial=env.initial,final=env.state,native_clear_evidence=env.native_clears))
                     records.append(result)
                     transitions.flush()
                     log.write(json.dumps(result,allow_nan=False)+"\n")
-                    atomic_json(output/"result.json",summarize(records,seeds,args.seeds,review["budget_compliant"]))
+                    atomic_json(output/"result.json",summarize_results(records,seeds,args.seeds,review["budget_compliant"]))
                     report(completed_episodes=len(records))
                     print(json.dumps({k:result[k] for k in ("pair","arm","seed","l","reason","success","native_combat_clears_alive")}),flush=True)
         cleanup = park_after_evaluation(env,output)
