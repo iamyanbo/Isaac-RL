@@ -24,6 +24,13 @@ is consumed; do not stop/restart without new authorization. Review snapshot targ
 8,866,422 is retained at the first eligible save without stopping training.
 Current process identities are in [OPERATIONS.md](OPERATIONS.md).
 
+September17 review: learner remains live beyond9.22M decisions, with zero logged
+boss wins in2,284 GRU episodes. The planned checkpoint was successfully retained
+at **8,867,574** (+1,201,152 from parent, within declared rollout overshoot).
+A detached **100-seed paired native boss-outcome comparison** is now running on
+reserved instance3; no optimizer or training changes. Artifacts:
+`runs/gru-review-20260917`. No held-out verdict until the comparison completes.
+
 ### Historical baseline — native combat-clear qualification, September16
 
 **Stopped after approved GRU handover: runs/ppo-native-clear-v9**, final7,666,422.

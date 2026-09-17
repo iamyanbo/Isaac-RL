@@ -204,3 +204,30 @@ Actual review target **8,866,422** (expected next full save8,867,574), configure
 before launch; no auto-stop/evaluator. Charts http://127.0.0.1:8771/; old8770 is
 DEAD/stopped history. Source0248b17, activation verifier be9de22. All artifacts
 under runs/gru-intervention-20260916; new run experiment.json mirrors activation.
+
+## September17 fixed-budget review launched
+
+The intended artifact was retained: **8,867,574 decisions /7,665 updates /
+25,580,344 counted native ticks**, SHA256
+**9db8408212991c23f81d648ae1d737324f27c9e653b29d4a1aed1fc70b7eb9a3**.
+Exposure1,201,152 decisions;1,152 over target is within the predeclared1,535 limit.
+Parent and treatment copied byte-for-byte to `runs/gru-review-20260917`; the live
+learner continues beyond9.22M and is NOT the reviewed model. No budget deviation.
+
+Comparison code **edeb741**,193 tests pass. Launch:
+
+```powershell
+py -3.10 -m isaac_rl.compare_observability --experiment gru `
+  --review runs/gru-review-20260917 `
+  --output runs/gru-review-20260917/comparison --seeds 100
+```
+
+Already running as43196/1789658811.9373875, exclusively on reserved10002. Do not
+execute again while live. Select all100 seeds before scoring, excluding21,374
+persisted prior training/evaluation seeds. Native win and non-win outcomes are
+cross-checked against initial/final game states. GRU secondary living-clear
+evidence uses observed uncleared combat then native clear while alive; residual
+nonblocking NPCs are allowed. The historical observability protocol is untouched.
+Uncertain secondary counters cannot create a boss win; any invalid primary native
+evidence suppresses a verdict. Results require completion and100 seed pairs before
+the fixed-budget hypothesis can be rejected. No auxiliary training intervention.

@@ -1,5 +1,60 @@
 # Current handoff — 2026-09-17
 
+## CURRENT: September17, 11:28 Toronto — GRU training LIVE; fixed-budget comparison LIVE
+
+Training remains **44504 /1789617680.6600385**, session-1789617683986341000,
+`runs/ppo-gru-v10`, unchanged six native workers0/1/2/4/5/6 and ports
+9999/10000/10001/10003/10004/10005. **Do not stop/reconfigure/reconnect it.**
+Actual PID/creation/command, six sockets, fresh heartbeat and empty stderr checked.
+At review9,216,246 saved/update7892; later9,226,998/update7899. No overnight crash.
+Current source edits are evaluator-only, not changes loaded into training.
+
+Checkpoint retention WORKED: milestone-8866422.pt holds **8,867,574 decisions /
+7,665 updates /25,580,344 native ticks**, SHA256
+**9db8408212991c23f81d648ae1d737324f27c9e653b29d4a1aed1fc70b7eb9a3**.
+Copied identically into `runs/gru-review-20260917/treatment.pt`. Parent7,666,422
+copied into parent.pt, SHA256
+**5c6c312a5492d7b372cf7be38bb1c1252bc71860377f443a8fce48668f9b0c81**.
+Exposure+1,201,152, overshoot1,152 within declared1,535. Budget compliant; the
+later9.22M checkpoint is NOT substituted. Archived training logs:2,284 episodes,
+zero logged wins,16 encounters; last500 zero wins/3 encounters/349 deaths/151 idle.
+These are training telemetry, not held-out competence or a causal verdict.
+
+Detached comparison **43196 /1789658811.9373875**, output
+`runs/gru-review-20260917/comparison`, exclusively owns reserved10002. Actual
+process identity/command/socket/advancing native seed selection verified.
+Reserved native remains **13848 /1789565921.170414**, same private worker03
+executable; only bridge0.1.6 enabled, no fixture, source/loaded-version compatible.
+No game restart, personal-save/Steam action, or training port touched. Memory
+prelaunch84.2% commit/10.1GiB headroom; learner still advancing during comparison.
+Do NOT relaunch/reconnect a live evaluator. Read status plus actual process ID.
+
+Protocol: **100 new matched native seeds /200 full-floor episodes**, all selected
+before scoring, excluding21,374 persisted training/evaluation seeds. Same
+per-seed stochastic action RNG946513+index and alternating policy order. Frozen
+parent/current-state GRU models, no optimizer, no ablation; hold4, max6750,
+idle900 and native_clear_v5 inherited identically. Per-episode GRU memory is
+zero-initialized and carried throughout. Primary is independently native-verified
+living first-floor boss completion; all seeds remain in denominator. Counterfactual
+reward, shaped returns, damage and movement do not establish success.
+
+Code **edeb741**, **193 tests pass** including actual frozen GRU comparison loop,
+pairing/state handling, no optimizer, budget/origin guards and native positive AND
+negative outcome checks. Separate GRU protocol keeps native Room.IsClear living
+combat transitions as SECONDARY, accepting residual nonblocking NPCs. Secondary
+counter disagreement is reported separately, not used as a boss result. Invalid
+boss evidence suppresses verdict; missing/partial/<100-seed results cannot reject
+the fixed-budget hypothesis. Original observability protocol/results are unchanged.
+Raw states/actions are gzip traced; per-episode initial/final states and native
+clear evidence preserved. Terminal evaluator performs unscored park/reset then
+closes10002 and exits. No automatic restart/stop, no current competence claim.
+
+Previous goal turn was PROGRESS (approved GRU activation); this turn is PROGRESS
+(fixed-budget evidence frozen and native comparison launched). Training charts
+remain http://127.0.0.1:8771/. Unrelated cathedral_aligned_l2.jpg untouched.
+Check the bounded comparison's actual terminal result on the next resume;
+neither partial scores nor current training logs prove the goal complete.
+
 ## CURRENT: September 17, 00:03 Toronto — six-worker GRU learner LIVE
 
 **Approved one-time GRU handover COMPLETE.** Learner **44504 /1789617680.6600385**,
