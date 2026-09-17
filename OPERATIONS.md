@@ -1,5 +1,18 @@
 # Current handoff — 2026-09-16
 
+## CURRENT: September 16, 23:59 Toronto — GRU one-time handover APPROVED
+
+User explicitly approved: "Approve checkpoint and six-worker GRU switch".
+Checkpoint/save learner37144 FINAL state, preserve identical bytes, then fork
+ppo-gru-v10 using combat_gru_v4, same six native games and unchanged rewards/
+training settings. This authorizes this handover only, not automatic restarts.
+Preflight verified37144/1789588746.8131385, fresh heartbeat, all six sockets,
+unchanged exact game identities, empty stderr. Saved7,661,766/update6879 and
+advancing; final count will be recorded after graceful stop. Port8771 is free.
+Windows commit81.9%,11.7GiB headroom observed. No native reload is required.
+The preparation snapshot is NOT the activation parent. Preserve unrelated JPG.
+GRU implementation0248b17; existing baseline archives remain untouched.
+
 ## CURRENT: September 16, 23:53 Toronto — GRU implemented; existing six-worker learner preserved
 
 User selected GRU recurrence, explicitly rejecting another reward intervention.
