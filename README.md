@@ -6,20 +6,28 @@ The project is **not yet at the requested success criterion**. Training must dem
 
 ## Run
 
-### Next intervention — GRU memory (implemented, awaiting handover)
+### Current training — GRU memory, September17
 
 `combat_gru_v4` replaces finite stacking with a256-unit GRU while preserving
 native combat enrichment, rewards, action timing and PPO settings. Training uses
 ordered sequences and per-worker episode-reset memory, not shuffled timesteps.
-Current six-worker learner remains live and unchanged until a new checkpointed
-handover is approved. Unit/integration, native smoke and disposable cost checks
-pass. No claim of improved gameplay yet. See [the GRU experiment](EXPERIMENT-GRU-20260916.md)
+**Live: runs/ppo-gru-v10, learner44504, six workers, CPU, four ticks/action.**
+Approved handover complete from final **7,666,422-step** checkpoint preserved
+byte-for-byte. Declared input/Adam migration and RNG/settings inheritance verified.
+First recurrent PPO update **7,667,958** changed all GRU weights; second also
+completed.188 tests and native smoke checks pass. Rewards are unchanged.
+No claim of improved gameplay yet. See [the GRU experiment](EXPERIMENT-GRU-20260916.md)
 for checkpoint projection, constants, evidence and explicit falsification.
 
-### Current training — native combat-clear qualification, September 16
+**Charts: http://127.0.0.1:8771/**. Uncapped detached training continues. Approval
+is consumed; do not stop/restart without new authorization. Review snapshot target
+8,866,422 is retained at the first eligible save without stopping training.
+Current process identities are in [OPERATIONS.md](OPERATIONS.md).
 
-**Live: `runs/ppo-native-clear-v9`, learner37144, six workers, CPU, four ticks/action.**
-Authorized handover complete from the final **6,667,974-step** checkpoint,
+### Historical baseline — native combat-clear qualification, September16
+
+**Stopped after approved GRU handover: runs/ppo-native-clear-v9**, final7,666,422.
+This reward run had started from the final **6,667,974-step** checkpoint,
 preserved byte-for-byte. Only learning change: stop awarding combat-clear bonuses
 for entering already-cleared rooms with NPCs (`native_clear_v5`). Observations,
 history, architecture, Adam/RNG and all training settings inherit exactly.
@@ -27,12 +35,11 @@ First PPO update6,669,510 verified; all16 parameter tensors changed and finite.
 175 tests and131,829-action native reward replay pass: exactly seven erroneous
 +10 payments removed; all other reward components and endings identical.
 See [the experiment](EXPERIMENT-NATIVE-CLEAR-20260916.md) for evidence,
-baseline hashes and explicit falsification. Review target7,867,974 is now
-automatically retained at the first eligible save **without stopping training**.
+baseline hashes and explicit falsification. Its review target7,867,974 was not
+reached before the user-selected GRU intervention; no fixed-budget verdict.
 
-**Charts: http://127.0.0.1:8770/**. Old8769 remains read-only baseline history.
-The one-time approval is consumed; preserve this live learner. Current process
-identities and handover evidence are in [OPERATIONS.md](OPERATIONS.md).
+**Baseline charts: http://127.0.0.1:8770/**. Old8769 also remains baseline history.
+Current GRU process identities and handover evidence are in [OPERATIONS.md](OPERATIONS.md).
 
 ### Historical baseline — enriched history, September 15–16
 

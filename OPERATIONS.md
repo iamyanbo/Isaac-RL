@@ -1,4 +1,74 @@
-# Current handoff — 2026-09-16
+# Current handoff — 2026-09-17
+
+## CURRENT: September 17, 00:03 Toronto — six-worker GRU learner LIVE
+
+**Approved one-time GRU handover COMPLETE.** Learner **44504 /1789617680.6600385**,
+session **session-1789617683986341000**, runs **runs/ppo-gru-v10**, uncapped,
+CPU/two Torch threads, same six workers0/1/2/4/5/6 on9999/10000/10001/10003/10004/10005.
+**Preserve this live learner; no new stop or automatic restart authority.**
+Older CURRENT sections below are historical, including their pending approval.
+
+Only learning change is **combat_history_v3 -> combat_gru_v4 / architecture3**:
+enriched current snapshot plus previous action into GRU256 instead of stacking;
+ordered256-step recurrent PPO sequences, separate per-worker hidden states,
+episode resets and correct terminal bootstrapping. native_clear_v5 reward and all
+coefficients unchanged. Four ticks/physical_v1, entropy.002, gamma/GAE,
+rollout256/env, batch256, Adam groups, episode6750/idle900, seed and all other
+training settings inherited. Same bridge0.1.6/combat_v2; no Lua reload/change.
+Code0248b17; activation verifier be9de22. **188 tests rerun and pass (20.60s).**
+
+Parent37144 exited0, cleanup complete, after saving FINAL **7,666,422 decisions /
+6,883 updates /15,831 historical episodes /20,777,343 counted native ticks**.
+Byte-identical old latest.pt, new parent.pt and
+`runs/gru-intervention-20260916/parent-final.pt`, SHA256
+**5c6c312a5492d7b372cf7be38bb1c1252bc71860377f443a8fce48668f9b0c81**.
+Preparation7,637,190 was NOT used to initialize; no rollback. Original5,377,722
+control and6,667,974 reward-parent baseline hashes reverified intact. Old run's
+stop.request remains intentionally; do not resume it alongside the GRU learner.
+
+All six existing native processes reused, exact identity/executable verified:
+0=19508/1789528905.762303;1=17580/1789528905.833454;
+2=31784/1789528905.846059;4=6852/1789528905.8606613;
+5=38476/1789528905.8764212;6=7680/1789528905.8921103.
+No native restart, Steam changes, resource recopy or personal-save changes.
+Initial native states all normal Isaac/floor1/frame1, full_floor/combat_v2/0.1.6.
+Fresh native episodes and zero hidden states are explicit at process startup.
+
+Archived **initial.pt**, SHA256
+**76ec2de508f2a723005bd363c5bd7ab9d74d5dc3869b2ae998936f21bf07ba7a**,
+matches declared input-column/Adam projection plus deterministic new GRU
+initialization exactly. Existing model tensors/moments inherit where compatible;
+new GRU moments start fresh, readout starts zero. RNG/counters/rewards/settings
+exact; new telemetry recent/loss windows clear. Not a claim of full old-policy
+equivalence: removed historical input columns cannot be retained with GRU-only
+memory. Full verification in initial-verification.json, no broad optimizer reset.
+
+First REAL update **6884 /7,667,958 steps /20,783,480 native ticks**; archived
+optimized.pt SHA256 **7336bcef4922aec92f92233f74ffef44dbce36e2044d86beac3c7c3deebfc530**.
+All21 parameter tensors changed and finite, including all four GRU tensors and
+memory_readout. Sequence length256,4,608 SGD tokens (three epochs via unchanged
+KL stopping). Collection36.5409s, PPO1.6049s, wall42.1370s,36.4525 decisions/s.
+Second update6885/7,669,494 also verified. All six established sockets owned44504,
+fresh heartbeat and stderr-20260917-000120.log empty. Every worker reports one
+snapshot/zero stacked span/temporal_mechanism GRU. Observed commit66.1%,21.6GiB
+headroom; not a guarantee against future leaks. No gameplay competence claim.
+
+**Charts http://127.0.0.1:8771/**, dashboard26460; API lifecycle ALIVE checked.
+Old8770 remains baseline history and correctly reports DEAD/stopped. Intervention
+artifact directory contains final parent config/status/logs, preflight, initial/
+optimized snapshots, verifications and experiment.json; new run mirrors manifest.
+Review target **8,866,422 decisions**, FINAL parent+1.2M; snapshot_steps.json was
+written before launch. Expected full-rollout retained step8,867,574; record actual
+step, check milestone_archive_error, never substitute later weights. Retention
+does NOT stop training or schedule an evaluator. Falsification in GRU experiment.
+
+Parent reward run logged1,444 episodes/zero boss wins (training logs, not held-out
+competence). Its7,867,974 review threshold was NOT reached: user explicitly
+superseded it with the GRU intervention at7,666,422. No fixed-budget reward verdict.
+No new evaluation launched. Reserved game3 remains parked, outside the six workers.
+This turn is PROGRESS: authorized handover plus actual recurrent optimization.
+Goal remains unproven; keep training detached. Unrelated cathedral_aligned_l2.jpg
+remains untracked/untouched. New approval is required before any future handover.
 
 ## CURRENT: September 16, 23:59 Toronto — GRU one-time handover APPROVED
 

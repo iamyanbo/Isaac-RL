@@ -10,11 +10,11 @@ the transition; no old observations or multi-action stack enter the policy.
 Existing visit-map memory remains unchanged. No LSTM, auxiliary objective,
 curriculum, control change or further reward adjustment.
 
-**Prepared and tested, not activated.** Existing six-worker native-clear-v9 learner
-37144 remains live and unchanged. A NEW one-time checkpointed handover approval
-has been requested; old reward-handover approval cannot be reused. Next run will
-be `runs/ppo-gru-v10`. At activation preserve and migrate the FINAL live checkpoint,
-never roll back to the preparation snapshot. Do not automatically stop/restart.
+**Activated September17:** `runs/ppo-gru-v10`, six workers, learner44504.
+User approved a NEW one-time GRU handover; parent37144 saved/exited cleanly.
+The final7,666,422-step checkpoint is byte-preserved and migrated, not the older
+preparation snapshot. First actual recurrent PPO update verified at7,667,958.
+Approval is consumed. Preserve the live learner; no automatic stop/restart.
 
 ## Why this mechanism
 
@@ -155,12 +155,13 @@ Parent comparison includes additional training and stack removal; it is not proo
 of recurrence's isolated causal effect. Project completion still requires >=90/100
 unique native held-out first-floor boss wins with95% Wilson lower bound>=.80.
 
-## Launch only after new handover approval
+## Historical approved launch procedure
 
 Save the LIVE learner's final checkpoint and verify clean exit/free ports; preserve
 its bytes as parent-final.pt. Use that FINAL parent to calculate the review target
 and populate new-run snapshot_steps.json BEFORE launch. Reuse six owned games.
-No Lua change or game reload is required. Example (not executed while awaiting approval):
+No Lua change or game reload is required. The following command was executed
+after the new approval; do NOT execute it again against the live run:
 
 ```powershell
 .\scripts\launch_parallel.ps1 -Run runs/ppo-gru-v10 `
@@ -173,3 +174,33 @@ Omit RewardProfile/EntropyCoef/Frames so they inherit. Do not use the old
 verify_reward_handover.py for this architecture change: it deliberately requires
 exact same model shapes/reward-profile migration. Verify the declared GRU input/
 Adam projection and actual new recurrent optimizer updates instead.
+
+## Completed activation evidence — September17, 00:03 Toronto
+
+Final parent **7,666,422 steps /6,883 updates /20,777,343 counted native ticks**,
+SHA256 **5c6c312a5492d7b372cf7be38bb1c1252bc71860377f443a8fce48668f9b0c81**,
+matches old latest.pt, intervention parent-final.pt and new-run parent.pt exactly.
+Old learner37144 exited0 with cleanup complete. Its reward experiment was
+superseded before its planned7,867,974 review target; no fixed-budget verdict.
+Training logs contain1,444 episodes and zero wins; these are not held-out results.
+
+New learner **44504 /1789617680.6600385**, session-1789617683986341000, reuses the
+same six native game identities without restarts or bridge/mod changes. Actual
+initial checkpoint SHA256
+**76ec2de508f2a723005bd363c5bd7ab9d74d5dc3869b2ae998936f21bf07ba7a**.
+`scripts/verify_gru_handover.py` confirms exact declared model/Adam projection,
+deterministic fresh GRU initialization, restored RNG/counters and unchanged
+rewards/settings; all native initial states are normal Isaac/full-floor/frame1.
+
+First optimized checkpoint **7,667,958 steps /6,884 updates /20,783,480 ticks**,
+SHA256 **7336bcef4922aec92f92233f74ffef44dbce36e2044d86beac3c7c3deebfc530**,
+has finite updates in all21 tensors, including all four GRU tensors and readout.
+Ordered sequence length256,4,608 SGD tokens, unchanged KL stop after three epochs.
+Collection36.5409s, PPO1.6049s, total42.1370s; second update7,669,494 also verified.
+All six sockets owned44504, fresh heartbeat, empty stderr. This verifies execution,
+not successful gameplay. The188-test suite rerun passed in20.60s before handover.
+
+Actual review target **8,866,422** (expected next full save8,867,574), configured
+before launch; no auto-stop/evaluator. Charts http://127.0.0.1:8771/; old8770 is
+DEAD/stopped history. Source0248b17, activation verifier be9de22. All artifacts
+under runs/gru-intervention-20260916; new run experiment.json mirrors activation.
