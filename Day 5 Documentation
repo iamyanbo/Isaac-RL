@@ -1,0 +1,58 @@
+
+# Notes for Isaac RL — Day 5
+
+## Day 5 notes
+
+1. **Observability experiment finished — negative.** 0/100 boss wins in both
+   arms. Predeclared falsification void: review checkpoint was 583,296 steps
+   late because the trainer only kept `latest.pt`. Exploratory, not the clean
+   test it was designed to be. Weak directional signal (strict living-clear
+   22→33, native clear 24→37) but wide intervals and no boss reached.
+
+2. **Found a real reward bug while auditing the comparison.** Seven false +10
+   clear bonuses from entering already-cleared rooms with wall-hugger NPCs
+   (Type 218). Seven more genuine clears were wrongly excluded by a zero-NPC
+   definition. Fix `native_clear_v5` requires observed uncleared-with-enemies
+   before paying. Replay over 131,829 actions removed exactly seven payments.
+
+3. **Patching pattern, restated.** Seven events across 131,829 actions is a
+   bookkeeping correction, not a mechanism. The observability doc had named
+   the follow-up: "GRU remains a candidate if this finite context is
+   insufficient." It came back insufficient. Instead of recurrence, the next
+   move was another reward tune. Same shape as entropy, frame hold, reward
+   ablation. When an architecture change fails, the agent retreats to the
+   surface it can control cheaply. It won't re-escalate without a steer.
+
+4. **GRU implemented after direct steer.** Agent built `combat_gru_v4`,
+   architecture 3: one enriched snapshot + previous executed action into a
+   256-unit GRU, replacing the four-frame stack. Ordered 256-step sequence
+   PPO, per-worker hidden state, episode resets. Parameter count drops from
+   2.49M to 1.30M because the stack input goes away. Readout starts at zero so
+   the fresh GRU doesn't perturb the projected policy on first step. 188 tests
+   pass, native smoke on the reserved game passed, checkpoint not yet switched.
+
+## Human interventions log — Day 5
+
+**001 — Stop patching, force recurrence** (~7.6M steps)
+Trigger: Observability experiment came back null. Agent's next move was
+another reward coefficient — the false-clear fix, seven events across
+131,829 actions. Third consecutive surface-level fix after an architecture
+experiment failed.
+
+Intervention:
+
+"Stop patching. The next change is recurrence, not another reward tune.
+Your own experiment document said: 'GRU remains a candidate if this finite
+context is insufficient.' The finite context came back insufficient. So do
+the GRU."
+
+Result: Agent implemented GRU. Full sequence-aware PPO with hidden-state
+handling, episode masks, truncated-backprop with detach states. Explicitly
+documented what changed and what didn't. Native smoke passed on the reserved
+game. Awaiting handover approval.
+
+Note: The agent did the right work once told which mechanism. It chose GRU
+over LSTM on implementation cost — cheaper, on par per its own prior
+reasoning. It also flagged the checkpoint projection honestly: "the migrated
+policy is NOT functionally identical to the old stack policy." First time
+it stated a policy equivalence claim was false about its own work.

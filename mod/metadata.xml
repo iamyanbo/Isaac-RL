@@ -1,0 +1,7 @@
+<metadata>
+  <name>Isaac RL Bridge</name>
+  <directory>isaac_rl_bridge</directory>
+  <id>isaac_rl_bridge</id>
+  <description>Local synchronous state and input bridge for reinforcement learning.</description>
+  <version>0.1.6</version>
+</metadata>
