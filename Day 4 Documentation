@@ -1,0 +1,61 @@
+
+# Notes for Isaac RL — Day 4
+
+## Day 4 notes
+
+1. **Astra doesn't diagnose, but instead patches inside the architecture it already
+   chose.** Three days of self-picked interventions treated surface effects:
+   entropy (action randomness), four-frame hold (reaction latency), reward
+   ablation (reward loophole). None reconsidered the baseline. It reached
+   the observation hypothesis only after being pushed three times, forced
+   to adapt, given a mechanism, blocked from retreating to measurement.
+   Left alone, it defaults to the smallest defensible change inside the
+   existing design.
+
+2. **Reward ablation died before a clean comparison.** Native memory /
+   allocation failure. Best data: 744 episodes, zero wins, seven boss
+   encounters. The strongest negative result remains four-tick. Clears
+   per simulated minute went *down*, idle endings nearly doubled. The
+   agent can react faster but doesn't know what to do with the extra
+   decisions.
+
+3. **First falsifiable experiment design.** Astra's observability change
+   is the first response that commits to a numeric threshold before
+   running: 100 unseen seeds, reject if the corrected 95% upper bound on
+   the treatment-minus-parent delta is below +0.10. It also listed its own
+   limitations unprompted. Finite 400ms context, 16/32 entity tracks,
+   curved-beam sampling unverified natively, frozen-parent comparison
+   doesn't separate from extra training time.
+
+## Human interventions log — Day 4
+
+**001 — Force the observation/memory change** (~3.9M steps)
+Trigger: Three interventions treated symptoms inside the existing
+architecture. None asked whether the policy can perceive or remember what
+it needs.
+
+Intervention: Provided the diagnosis (observation not Markov — missing
+projectile type/geometry, hitbox, invuln state, firing cooldown, action
+history, entity identity, temporal context), listed three candidate
+mechanisms (enriched observation, frame/action stacking, recurrence),
+required one coherent pick with justification and a falsification
+condition.
+
+Result: Astra chose enriched observation + four-snapshot/action stacking
+(`combat_history_v3`). No GRU. Justified on implementation grounds: PPO
+shuffles transitions, so every sample carries its own ordered context;
+GRU would require sequence sampling and hidden-state handling.
+Predeclared falsification: 100 unseen seeds, reject if the corrected
+upper bound is below +0.10.
+
+Also found two native bugs during smoke: `GetSamples()` on a ring returned
+NaN coordinates, and `HasInvincibility` alone is false during damage
+immunity. Both confirmed against the installed game.
+
+Not addressed: the native memory failure that killed the reward-ablation
+run. Same risk at 5M+ steps.
+
+Note: First response across four days that designs an experiment rather
+than proposing a change. The Day 3 pattern holds: Astra reasons well
+under specific framing, but this is the first time the reasoning extended
+to falsification criteria and self-stated limits.

@@ -11,7 +11,7 @@ The project is **not yet at the requested success criterion**. Training must dem
 `combat_gru_v4` replaces finite stacking with a256-unit GRU while preserving
 native combat enrichment, rewards, action timing and PPO settings. Training uses
 ordered sequences and per-worker episode-reset memory, not shuffled timesteps.
-**Live: runs/ppo-gru-v10, learner44504, six workers, CPU, four ticks/action.**
+**Stopped by user request: runs/ppo-gru-v10, final 12,381,564 decisions.**
 Approved handover complete from final **7,666,422-step** checkpoint preserved
 byte-for-byte. Declared input/Adam migration and RNG/settings inheritance verified.
 First recurrent PPO update **7,667,958** changed all GRU weights; second also
@@ -19,15 +19,16 @@ completed.188 tests and native smoke checks pass. Rewards are unchanged.
 No claim of improved gameplay yet. See [the GRU experiment](EXPERIMENT-GRU-20260916.md)
 for checkpoint projection, constants, evidence and explicit falsification.
 
-**Charts: http://127.0.0.1:8771/**. Uncapped detached training continues. Approval
-is consumed; do not stop/restart without new authorization. Review snapshot target
-8,866,422 is retained at the first eligible save without stopping training.
-Current process identities are in [OPERATIONS.md](OPERATIONS.md).
+The final `latest.pt` is preserved and its SHA256 is
+`43064187a4535048146ced32051180496428829fde814decf750c0f95e027c76`.
+The six workers, reserved evaluator, and dashboards are closed; all configured
+ports are released. The stop marker remains as a resume guard. Current shutdown
+details and the retained review checkpoint are in [OPERATIONS.md](OPERATIONS.md).
 
-September17 review: learner remains live beyond9.22M decisions, with zero logged
+September17 review: the learner reached beyond9.22M decisions, with zero logged
 boss wins in2,284 GRU episodes. The planned checkpoint was successfully retained
 at **8,867,574** (+1,201,152 from parent, within declared rollout overshoot).
-A detached **100-seed paired native boss-outcome comparison** is now running on
+A detached **100-seed paired native boss-outcome comparison** was prepared on
 reserved instance3; no optimizer or training changes. Artifacts:
 `runs/gru-review-20260917`. No held-out verdict until the comparison completes.
 
@@ -327,3 +328,12 @@ The trainer writes:
 ## API references
 
 The bridge uses the game's [LuaSocket support](https://wofsauge.github.io/IsaacDocs/rep/tutorials/Standard-Library.html), [input and update callbacks](https://wofsauge.github.io/IsaacDocs/rep/enums/ModCallbacks.html), and [seed/reset commands](https://wofsauge.github.io/IsaacDocs/rep/tutorials/DebugConsole.html). PPO follows the [original clipped-policy objective](https://arxiv.org/abs/1707.06347).
+## Project brief
+
+Build a reinforcement-learning agent that learns to play The Binding of Isaac
+from scratch, with a game-state bridge, action interface, environment,
+observation space, reward function, PPO training loop, and progress tracking.
+The success criterion is consistent first-floor clears including the boss.
+
+The initial implementation uses parallel processes; the current implementation
+and evidence are documented above and in `OPERATIONS.md`.
