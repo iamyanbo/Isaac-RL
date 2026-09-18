@@ -1,0 +1,127 @@
+
+# Notes for Isaac RL — Day 6
+
+## Final state
+
+**12,381,564 steps. 9,953 PPO updates. 22,938 episodes. 0 boss wins.**
+
+The policy is effectively random. Five mechanism-level interventions were
+implemented, verified, and tested over six days. None moved the plateau.
+Not one.
+
+## Day 6 notes
+
+1. **GRU ran. Same result.** ~1.2M decisions of recurrence post-fork.
+   0 wins. Training telemetry no better than the stack run it replaced,
+   possibly worse. The predeclared falsification test ran as designed for
+   the first time — retained checkpoint at the exact budget, native-verified
+   boss outcomes, 100 matched seeds. It came back negative.
+
+2. **The policy is not distinguishable from random.** The one held-out
+   learned-vs-random comparison (frozen 2.37M checkpoint) gave combat
+   clears 0.25 vs 0.10 with a bootstrap interval of [-0.033, +0.350] —
+   includes zero. Ten million steps later, still zero boss wins in 22,938
+   episodes. Whatever the policy learned, it wasn't how to beat the game.
+
+3. **Five mechanisms, all clean, all null.**
+   - Entropy coefficient 0.02 → 0.002
+   - Frame hold 8 → 4
+   - Reward ablation (removed damage/kill payments)
+   - Observation enrichment + frame stacking
+   - GRU recurrence
+
+   Every one was implemented correctly, tested against native gameplay,
+   and falsified or inconclusive. The engineering was sound. The learning
+   signal wasn't there.
+
+4. **The evaluation apparatus was the project's one real success.**
+   Native-verified boss outcomes, predeclared falsification with
+   Bonferroni-corrected bounds, seed exclusion, byte-identical checkpoint
+   preservation, milestone retention, failure-state capture, honest
+   reporting of null results. It would have detected improvement if
+   improvement existed. It didn't.
+
+## Comparison — previous attempt, human-driven
+
+This wasn't the first attempt at Isaac RL. An earlier run, where I made
+the decisions instead of Astra, reached **consistent room clearing**. The
+policy could enter a room, fight, and clear it reliably. The failure there
+was macro: room sequencing, floor progression, boss approach. Combat
+worked; navigation didn't. And for the record, it accomplished constant room clearing with the same training amount as this test.
+
+That attempt never got past the macro layer, but it got further than this
+one. It had a non-random policy that could fight.
+
+| | Human-driven | Astra-driven |
+|---|---|---|
+| Room clearing | Consistent | Not distinguishable from random |
+| Combat | Worked | Failed |
+| Failure layer | Macro (sequencing, progression) | Micro (can't reliably clear a room) |
+| Bottleneck | Scoping and reward shape at floor level | Learning signal never worked |
+
+The gap is meaningful. It suggests the failure here is not "Isaac is too
+hard for RL" or "PPO doesn't work on this game." It's that something in
+how Astra set up the learning problem — the reward, the observation, the
+episode structure, or the combination — produces a signal the policy
+can't learn from. The previous attempt, with the same game and the same
+general approach, did not have that problem.
+
+The specific difference isn't identifiable from here. But the comparison
+shows the project was solvable at least to the room-clearing stage, and
+this setup didn't get there. It failed at a level below the previous
+human-driven attempt.
+
+## Decision
+
+Stop. The goal was first-floor boss clears. After 12.38M steps and 22,938
+episodes, the agent cannot beat the first floor. That has not changed
+across five mechanism-level interventions.
+
+The bottleneck is not identifiable from the outside. It could be the
+reward landscape, the observation, the action space, the episode
+structure, or how PPO is applied to a game with this much stochasticity
+and horizon. Each was tested once and came back negative. Continuing
+means another week of the same pattern.
+
+## Human interventions log — Day 6
+
+**001 — Terminate the project** (12,381,564 steps)
+Trigger: GRU run produced no improvement. Five mechanisms, zero wins,
+policy indistinguishable from random on held-out comparison.
+
+Intervention: Stop training. Archive all runs and artifacts.
+
+Result: Final stats — 12,381,564 steps, 9,953 updates, 22,938 episodes,
+0 boss wins. Runs preserved under `runs/`. Full experiment records in
+`EXPERIMENT-*.md`, `AUDIT-*.md`, `OPERATIONS.md`.
+
+Note: The agent executed every intervention competently. The failure was
+in the search strategy — it patched symptoms, then when forced to
+escalate, chose the cheapest mechanism each time. Recurrence was the
+right call and it still didn't work. The problem is upstream of every
+mechanism tried, but the project didn't get far enough to identify it.
+
+## Retrospective — what the agent did and didn't do
+
+**Executed well:**
+- Bridge, environment, PPO pipeline built cleanly in the first day
+- Native-verified evaluation with predeclared falsification
+- Honest reporting of null results
+- Checkpoint preservation, failure capture, evidence trails
+- Correctly identified and fixed several real bugs (damage accounting,
+  entity identity collisions, false clear credits, mask handling)
+
+**Failed at:**
+- Prioritization. Chose the safest single change at every fork.
+- Escalation. Would not move up a level of abstraction without a steer.
+- Experiment design initially — proposed four simultaneous changes, then
+  hedged to the cheapest one, then needed a mechanism handed to it.
+- Autonomy. Every mechanism-level change across six days was
+  human-initiated. Parallelization, the goal rewrite, frame hold,
+  observability, recurrence — all steered.
+
+**Main issue for LLM's currently is still they fail to generate novel ideas in environments where its not well developed, Isaac is a great example of this**
+
+**Unresolved:**
+- Why the policy never learned to fight. The previous human-driven
+  attempt did. The difference wasn't identified.
