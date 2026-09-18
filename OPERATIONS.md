@@ -1,4 +1,23 @@
-# Current handoff — 2026-09-17
+# Current handoff — 2026-09-18
+
+## CURRENT: September 18 — pipeline stopped by user request
+
+The user explicitly requested that the pipeline, model learning, and all Isaac
+instances be closed. The GRU learner exited cooperatively after writing its
+final checkpoint at **12,381,564 decisions / 9,953 updates / 22,938 episodes**.
+`runs/ppo-gru-v10/stop.request` remains as a resume guard. The final
+`latest.pt` SHA256 is **43064187a4535048146ced32051180496428829fde814decf750c0f95e027c76**.
+
+All project-owned native games (workers 0–6, including reserved worker 3) and
+all project dashboards were then closed. Ports 9999, 10000, 10001, 10002,
+10003, 10004, 10005, 8768, 8769, 8770, and 8771 have no listeners. No Steam
+processes or personal saves were touched. Do not resume or relaunch until the
+user explicitly requests it.
+
+The fixed-budget comparison was not allowed to restart or reconnect during
+shutdown. Unrelated `cathedral_aligned_l2.jpg` remains untouched and untracked.
+
+## CURRENT: September17, 11:28 Toronto — GRU training LIVE; fixed-budget comparison LIVE
 
 ## CURRENT: September17, 11:28 Toronto — GRU training LIVE; fixed-budget comparison LIVE
 
